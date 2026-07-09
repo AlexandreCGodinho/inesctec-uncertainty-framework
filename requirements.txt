@@ -1,0 +1,10 @@
+pydantic>=2.7
+vllm>=0.6
+litellm>=1.40
+sentence-transformers>=3.0
+datasets>=2.19
+pandas
+numpy
+pyyaml
+tqdm
+pytest
