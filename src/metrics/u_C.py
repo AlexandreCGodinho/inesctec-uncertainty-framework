@@ -1,17 +1,9 @@
-from sentence_transformers import SentenceTransformer
 import numpy as np
 
-_EMBEDDER = None
+from src.metrics.embeddings import _get_embedder
 
 
-def _get_embedder():
-    global _EMBEDDER
-    if _EMBEDDER is None:
-        _EMBEDDER = SentenceTransformer("all-MiniLM-L6-v2")
-    return _EMBEDDER
-
-
-def compute_u_C(agent_answers: list[str]) -> float:
+def compute_u_C(agent_answers: list[str]) -> float | None:
     if len(agent_answers) < 2:
         return None
     embedder = _get_embedder()
@@ -20,9 +12,12 @@ def compute_u_C(agent_answers: list[str]) -> float:
     similarities = []
     for i in range(K):
         for j in range(i + 1, K):
-            sim = np.dot(embeddings[i], embeddings[j]) / (
-                np.linalg.norm(embeddings[i]) * np.linalg.norm(embeddings[j])
-            )
+            norm_i = np.linalg.norm(embeddings[i])
+            norm_j = np.linalg.norm(embeddings[j])
+            if norm_i == 0.0 or norm_j == 0.0:
+                sim = 0.0
+            else:
+                sim = np.dot(embeddings[i], embeddings[j]) / (norm_i * norm_j)
             similarities.append(sim)
     mean_sim = np.mean(similarities) if similarities else 0.0
-    return 1.0 - mean_sim
+    return max(0.0, min(1.0, 1.0 - mean_sim))
