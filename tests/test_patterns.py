@@ -45,6 +45,33 @@ class TestGovernedWorkflow:
 
 
 class TestRetrieveRelevantContext:
+    def test_filters_correctly_with_stopwords_and_punctuation(self):
+        context = (
+            "Paris is the capital of France. "
+            "The Eiffel Tower is a famous landmark. "
+            "Bananas are a good source of potassium."
+        )
+        result = _retrieve_relevant_context(context, "What is AI?")
+        assert result == context or result == ""
+
+    def test_filters_out_stopword_only_matches(self):
+        context = (
+            "Paris is the capital of France. "
+            "Bananas are a good source of potassium."
+        )
+        result = _retrieve_relevant_context(context, "What is the capital?")
+        assert "Paris" in result
+        assert "Bananas" not in result
+
+    def test_word_boundary_matching_avoids_substring_false_positives(self):
+        context = (
+            "The main office is located downtown. "
+            "AI research is advancing rapidly."
+        )
+        result = _retrieve_relevant_context(context, "Tell me about AI?")
+        assert "AI research" in result
+        assert "main office" not in result
+
     def test_filters_irrelevant_sentences(self):
         context = (
             "AI is artificial intelligence. "
