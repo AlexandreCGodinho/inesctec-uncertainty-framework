@@ -1,21 +1,13 @@
-from sentence_transformers import SentenceTransformer
 import numpy as np
 
-_EMBEDDER = None
+from src.metrics.embeddings import _get_embedder
 
 
-def _get_embedder():
-    global _EMBEDDER
-    if _EMBEDDER is None:
-        _EMBEDDER = SentenceTransformer("all-MiniLM-L6-v2")
-    return _EMBEDDER
-
-
-def compute_u_R(traces: list[str], calibration_max: float = 1.0) -> float:
+def compute_u_R(traces: list[str], calibration_max: float = 1.0) -> float | None:
     if len(traces) < 2:
         return None
     embedder = _get_embedder()
-    embeddings = embedder.encode(traces)
+    embeddings = np.array(embedder.encode(traces))
     distances = []
     for k in range(1, len(embeddings)):
         dist = np.linalg.norm(embeddings[k] - embeddings[k - 1])

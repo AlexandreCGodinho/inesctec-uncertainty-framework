@@ -1,25 +1,79 @@
 from src.schemas import RunState, PatternID
 from src.llm_client import MockLLMClient
-from src.patterns import (
-    GovernedWorkflow,
-    RoleSeparatedPipeline,
-    ReflexiveSingleAgent,
-    MultiPerspectiveDeliberation,
-)
+from src.patterns.p1_governed import GovernedWorkflow, _retrieve_relevant_context
+from src.patterns.p2_role_pipeline import RoleSeparatedPipeline
+from src.patterns.p3_reflexive import ReflexiveSingleAgent
+from src.patterns.p4_deliberation import MultiPerspectiveDeliberation
 
 
 def _make_state(pattern):
     return RunState(
         run_id="test", pattern=pattern,
         dataset="ifeval", query_id="q1",
-        query="What is AI?", reference="AI is artificial intelligence.",
+        query="What is AI?",
+        reference="AI is artificial intelligence. It powers many applications. "
+        "Machine learning is a subset of AI.",
     )
 
 
-def test_p1_governed():
-    result = GovernedWorkflow(MockLLMClient()).run(_make_state(PatternID.GOVERNED_WORKFLOW))
-    assert len(result.calls) == 1
-    assert result.final_answer is not None
+class TestGovernedWorkflow:
+    def test_final_answer_is_set(self):
+        result = GovernedWorkflow(MockLLMClient()).run(
+            _make_state(PatternID.GOVERNED_WORKFLOW)
+        )
+        assert result.final_answer is not None
+        assert len(result.final_answer) > 0
+
+    def test_two_llm_calls(self):
+        result = GovernedWorkflow(MockLLMClient()).run(
+            _make_state(PatternID.GOVERNED_WORKFLOW)
+        )
+        assert len(result.calls) == 2
+
+    def test_correct_agent_roles_in_order(self):
+        result = GovernedWorkflow(MockLLMClient()).run(
+            _make_state(PatternID.GOVERNED_WORKFLOW)
+        )
+        roles = [c.agent_role for c in result.calls]
+        assert roles == ["drafter", "formatter"]
+
+    def test_rounds_is_one(self):
+        result = GovernedWorkflow(MockLLMClient()).run(
+            _make_state(PatternID.GOVERNED_WORKFLOW)
+        )
+        assert result.rounds == 1
+
+
+class TestRetrieveRelevantContext:
+    def test_filters_irrelevant_sentences(self):
+        context = (
+            "AI is artificial intelligence. "
+            "Venus is the hottest planet. "
+            "Machine learning is a subset of AI. "
+            "Saturn has rings made of ice."
+        )
+        result = _retrieve_relevant_context(context, "artificial intelligence machine learning")
+        assert "Venus" not in result
+        assert "Saturn" not in result
+        assert "artificial intelligence" in result
+
+    def test_keeps_all_when_query_words_are_in_every_sentence(self):
+        context = "AI is here. AI is everywhere. AI helps us."
+        result = _retrieve_relevant_context(context, "AI")
+        assert len(result) > 0
+        assert "AI is here" in result
+        assert "AI is everywhere" in result
+
+    def test_returns_original_context_when_no_query_words(self):
+        context = "The sky is blue."
+        result = _retrieve_relevant_context(context, "AI")
+        assert result == context
+
+    def test_deterministic(self):
+        ctx = "First sentence about AI. Second about ML. Third about data."
+        r1 = _retrieve_relevant_context(ctx, "ML")
+        r2 = _retrieve_relevant_context(ctx, "ML")
+        assert r1 == r2
 
 
 def test_p2_role_pipeline():

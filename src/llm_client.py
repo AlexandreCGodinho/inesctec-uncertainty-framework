@@ -10,8 +10,24 @@ def _load_experiment_config() -> dict:
     if _CONFIG_CACHE is None:
         import yaml
         path = Path(__file__).resolve().parents[1] / "config" / "experiment.yaml"
+        if not path.exists():
+            raise FileNotFoundError(
+                f"experiment.yaml not found at {path}. "
+                "Make sure you're running from the repo root or that "
+                "config/experiment.yaml exists."
+            )
         with open(path) as f:
-            _CONFIG_CACHE = yaml.safe_load(f)
+            data = yaml.safe_load(f)
+        if not isinstance(data, dict):
+            raise ValueError(
+                f"experiment.yaml at {path} did not parse to a dict."
+            )
+        for required_key in ("model_id", "base_seed"):
+            if required_key not in data:
+                raise KeyError(
+                    f"experiment.yaml is missing required key '{required_key}'."
+                )
+        _CONFIG_CACHE = data
     return _CONFIG_CACHE
 
 
