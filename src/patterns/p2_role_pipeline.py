@@ -60,14 +60,21 @@ QUERY: {query}
 VERDICT (approved/needs_revision/rejected):
 CRITIQUE:"""
 
-_APPROVED_PATTERN = re.compile(r"\bapproved\b", re.IGNORECASE)
-_NEGATION_PATTERN = re.compile(r"\b(not|un|non)[\s-]*approved\b", re.IGNORECASE)
+_VERDICT_PATTERN = re.compile(
+    r"VERDICT\s*(?:\([^)]*\))?\s*:\s*(approved|needs_revision|rejected)",
+    re.IGNORECASE,
+)
+
+
+def _parse_verdict(response_text: str) -> str | None:
+    match = _VERDICT_PATTERN.search(response_text)
+    if match is None:
+        return None
+    return match.group(1).lower()
 
 
 def _is_approved(response_text: str) -> bool:
-    if _NEGATION_PATTERN.search(response_text):
-        return False
-    return bool(_APPROVED_PATTERN.search(response_text))
+    return _parse_verdict(response_text) == "approved"
 
 
 def _find_reviewer_by_round(calls: list[LLMCall], round_index: int) -> LLMCall | None:
@@ -77,13 +84,25 @@ def _find_reviewer_by_round(calls: list[LLMCall], round_index: int) -> LLMCall |
     return None
 
 
+def _find_analyst_by_round(calls: list[LLMCall], round_index: int) -> LLMCall | None:
+    for call in calls:
+        if call.agent_role == "analyst" and call.round_index == round_index:
+            return call
+    return None
+
+
 class RoleSeparatedPipeline(Orchestrator):
     def __init__(self, client, max_revisions=None):
         super().__init__(client)
         if max_revisions is None:
             cfg_path = Path(__file__).resolve().parents[2] / "config" / "experiment.yaml"
-            with open(cfg_path) as f:
+            with open(cfg_path, encoding="utf-8") as f:
                 cfg = yaml.safe_load(f)
+            if not isinstance(cfg, dict):
+                raise ValueError(
+                    f"experiment.yaml at {cfg_path} did not parse to a mapping "
+                    f"(got {type(cfg).__name__}); check the file is valid YAML."
+                )
             max_revisions = cfg.get("pipeline_max_revisions", 2)
         self.max_revisions = max_revisions
 
@@ -107,10 +126,12 @@ class RoleSeparatedPipeline(Orchestrator):
                         query=state.query,
                     ),
                     round_index=0,
+                    want_logprobs=True,
                 )
             else:
                 prev_reviewer = _find_reviewer_by_round(state.calls, current_round - 1)
-                prev_analysis = state.calls[-2].response_text
+                prev_analyst = _find_analyst_by_round(state.calls, current_round - 1)
+                prev_analysis = prev_analyst.response_text if prev_analyst else ""
                 critique = prev_reviewer.response_text if prev_reviewer else ""
                 analyst_call = self.client.call(
                     agent_role="analyst",
@@ -121,6 +142,7 @@ class RoleSeparatedPipeline(Orchestrator):
                         query=state.query,
                     ),
                     round_index=current_round,
+                    want_logprobs=True,
                 )
             state.calls.append(analyst_call)
 
@@ -138,8 +160,10 @@ class RoleSeparatedPipeline(Orchestrator):
             if _is_approved(reviewer_call.response_text):
                 break
 
+        last_analyst = _find_analyst_by_round(state.calls, current_round)
+        last_reviewer = _find_reviewer_by_round(state.calls, current_round)
         state.final_answer = (
-            f"{state.calls[-2].response_text}\n\n"
-            f"---\n[Reviewer: {state.calls[-1].response_text}]"
+            f"{last_analyst.response_text if last_analyst else ''}\n\n"
+            f"---\n[Reviewer: {last_reviewer.response_text if last_reviewer else ''}]"
         )
         return state

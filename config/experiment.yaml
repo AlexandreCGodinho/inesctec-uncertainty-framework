@@ -1,4 +1,4 @@
-﻿model_id: google/gemma-4-12b-it     # locked in doc 02, Section 3
+model_id: google/gemma-4-12b-it     # locked in doc 02, Section 3
 dtype: bfloat16
 base_seed: 1234
 pattern4_num_agents: 3               # locked in doc 02, Section 4.3; do not change

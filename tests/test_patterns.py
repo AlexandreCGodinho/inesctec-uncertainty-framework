@@ -1,7 +1,7 @@
 from src.schemas import RunState, PatternID, LLMCall
 from src.llm_client import MockLLMClient
 from src.patterns.p1_governed import GovernedWorkflow, _retrieve_relevant_context
-from src.patterns.p2_role_pipeline import RoleSeparatedPipeline, _is_approved
+from src.patterns.p2_role_pipeline import RoleSeparatedPipeline, _is_approved, _parse_verdict
 from src.patterns.p3_reflexive import ReflexiveSingleAgent
 from src.patterns.p4_deliberation import MultiPerspectiveDeliberation
 
@@ -127,7 +127,7 @@ class TestRoleSeparatedPipeline:
                     return LLMCall(
                         agent_role="reviewer", round_index=round_index,
                         prompt=prompt,
-                        response_text="CRITIQUE: MISSING_CITATION_MARKER. Revise.",
+                        response_text="VERDICT: needs_revision\nCRITIQUE: MISSING_CITATION_MARKER. Revise.",
                     )
                 return super().call(agent_role, prompt, round_index, want_logprobs)
 
@@ -149,6 +149,22 @@ class TestIsApproved:
 
     def test_needs_revision(self):
         assert _is_approved("VERDICT: needs_revision") is False
+
+    def test_verdict_mentioned_in_critique_text_not_misread(self):
+        text = (
+            "VERDICT: needs_revision\n"
+            "CRITIQUE: This analysis will be approved once the citation "
+            "for the GDP figure is added."
+        )
+        assert _is_approved(text) is False
+
+    def test_verdict_parsed_correctly_when_approved(self):
+        text = "VERDICT: approved\nCRITIQUE: All claims are well supported."
+        assert _is_approved(text) is True
+
+    def test_malformed_verdict_defaults_to_not_approved(self):
+        text = "This looks fine to me."
+        assert _is_approved(text) is False
 
 
 def test_p3_reflexive():
