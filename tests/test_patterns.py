@@ -1,7 +1,9 @@
-from src.schemas import RunState, PatternID
+import pytest
+
+from src.schemas import RunState, PatternID, LLMCall
 from src.llm_client import MockLLMClient
 from src.patterns.p1_governed import GovernedWorkflow, _retrieve_relevant_context
-from src.patterns.p2_role_pipeline import RoleSeparatedPipeline
+from src.patterns.p2_role_pipeline import RoleSeparatedPipeline, _is_approved, _parse_verdict
 from src.patterns.p3_reflexive import ReflexiveSingleAgent
 from src.patterns.p4_deliberation import MultiPerspectiveDeliberation
 
@@ -103,13 +105,116 @@ class TestRetrieveRelevantContext:
         assert r1 == r2
 
 
-def test_p2_role_pipeline():
-    result = RoleSeparatedPipeline(MockLLMClient()).run(
-        _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
-    )
-    assert len(result.calls) == 3
-    roles = [c.agent_role for c in result.calls]
-    assert roles == ["researcher", "analyst", "reviewer"]
+class TestRoleSeparatedPipeline:
+    def test_linear_pass_with_zero_revisions(self):
+        result = RoleSeparatedPipeline(MockLLMClient(), max_revisions=0).run(
+            _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
+        )
+        assert len(result.calls) == 3
+        roles = [c.agent_role for c in result.calls]
+        assert roles == ["researcher", "analyst", "reviewer"]
+        assert result.rounds == 1
+        assert result.final_answer is not None
+
+    def test_revision_loop_until_max_revisions(self):
+        max_r = 2
+        result = RoleSeparatedPipeline(MockLLMClient(), max_revisions=max_r).run(
+            _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
+        )
+        expected_calls = 1 + (max_r + 1) * 2
+        assert len(result.calls) == expected_calls
+        assert result.rounds == max_r + 1
+        assert result.final_answer is not None
+
+    def test_approved_verdict_stops_early(self):
+        class MockApprovingReviewer(MockLLMClient):
+            def call(self, agent_role, prompt, round_index=0, want_logprobs=False):
+                if agent_role == "reviewer":
+                    return LLMCall(
+                        agent_role="reviewer", round_index=round_index,
+                        prompt=prompt,
+                        response_text="VERDICT: approved. All good.",
+                    )
+                return super().call(agent_role, prompt, round_index, want_logprobs)
+
+        result = RoleSeparatedPipeline(MockApprovingReviewer(), max_revisions=5).run(
+            _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
+        )
+        assert len(result.calls) == 3
+        assert result.rounds == 1
+
+    def test_rounds_property_increments_correctly(self):
+        result = RoleSeparatedPipeline(MockLLMClient(), max_revisions=1).run(
+            _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
+        )
+        assert result.rounds == 2
+
+    def test_critique_is_passed_forward(self):
+        class MockCritiquingReviewer(MockLLMClient):
+            def call(self, agent_role, prompt, round_index=0, want_logprobs=False):
+                if agent_role == "reviewer":
+                    return LLMCall(
+                        agent_role="reviewer", round_index=round_index,
+                        prompt=prompt,
+                        response_text="VERDICT: needs_revision\nCRITIQUE: MISSING_CITATION_MARKER. Revise.",
+                    )
+                return super().call(agent_role, prompt, round_index, want_logprobs)
+
+        result = RoleSeparatedPipeline(MockCritiquingReviewer(), max_revisions=1).run(
+            _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
+        )
+        assert "MISSING_CITATION_MARKER" in result.calls[3].prompt
+
+
+class TestMaxRevisionsValidation:
+    def test_negative_max_revisions_raises(self):
+        with pytest.raises(ValueError, match="non-negative integer"):
+            RoleSeparatedPipeline(MockLLMClient(), max_revisions=-1)
+
+    def test_non_int_max_revisions_raises(self):
+        with pytest.raises(ValueError, match="non-negative integer"):
+            RoleSeparatedPipeline(MockLLMClient(), max_revisions="two")
+
+    def test_missing_config_file_raises_filenotfounderror(self, monkeypatch):
+        import pathlib
+        original_exists = pathlib.Path.exists
+        def mock_exists(path_obj):
+            if "experiment.yaml" in str(path_obj):
+                return False
+            return original_exists(path_obj)
+        monkeypatch.setattr("pathlib.Path.exists", mock_exists)
+        with pytest.raises(FileNotFoundError, match="experiment.yaml not found"):
+            RoleSeparatedPipeline(MockLLMClient())
+
+
+class TestIsApproved:
+    def test_approved_verdict(self):
+        assert _is_approved("VERDICT: approved") is True
+
+    def test_not_approved(self):
+        assert _is_approved("VERDICT: not approved") is False
+
+    def test_unapproved(self):
+        assert _is_approved("VERDICT: unapproved, missing sources") is False
+
+    def test_needs_revision(self):
+        assert _is_approved("VERDICT: needs_revision") is False
+
+    def test_verdict_mentioned_in_critique_text_not_misread(self):
+        text = (
+            "VERDICT: needs_revision\n"
+            "CRITIQUE: This analysis will be approved once the citation "
+            "for the GDP figure is added."
+        )
+        assert _is_approved(text) is False
+
+    def test_verdict_parsed_correctly_when_approved(self):
+        text = "VERDICT: approved\nCRITIQUE: All claims are well supported."
+        assert _is_approved(text) is True
+
+    def test_malformed_verdict_defaults_to_not_approved(self):
+        text = "This looks fine to me."
+        assert _is_approved(text) is False
 
 
 def test_p3_reflexive():

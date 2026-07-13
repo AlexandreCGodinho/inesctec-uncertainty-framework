@@ -9,3 +9,5 @@ samples_per_dataset:                 # set during Phase 1
   livebench: null
   finqa: null
   ifeval: null
+pipeline_max_revisions: 2          # Pattern 2 revision-loop cap; Doc 01 Section 3
+
