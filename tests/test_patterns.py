@@ -1,7 +1,7 @@
-from src.schemas import RunState, PatternID
+from src.schemas import RunState, PatternID, LLMCall
 from src.llm_client import MockLLMClient
 from src.patterns.p1_governed import GovernedWorkflow, _retrieve_relevant_context
-from src.patterns.p2_role_pipeline import RoleSeparatedPipeline
+from src.patterns.p2_role_pipeline import RoleSeparatedPipeline, _is_approved
 from src.patterns.p3_reflexive import ReflexiveSingleAgent
 from src.patterns.p4_deliberation import MultiPerspectiveDeliberation
 
@@ -76,13 +76,79 @@ class TestRetrieveRelevantContext:
         assert r1 == r2
 
 
-def test_p2_role_pipeline():
-    result = RoleSeparatedPipeline(MockLLMClient()).run(
-        _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
-    )
-    assert len(result.calls) == 3
-    roles = [c.agent_role for c in result.calls]
-    assert roles == ["researcher", "analyst", "reviewer"]
+class TestRoleSeparatedPipeline:
+    def test_linear_pass_with_zero_revisions(self):
+        result = RoleSeparatedPipeline(MockLLMClient(), max_revisions=0).run(
+            _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
+        )
+        assert len(result.calls) == 3
+        roles = [c.agent_role for c in result.calls]
+        assert roles == ["researcher", "analyst", "reviewer"]
+        assert result.rounds == 1
+        assert result.final_answer is not None
+
+    def test_revision_loop_until_max_revisions(self):
+        max_r = 2
+        result = RoleSeparatedPipeline(MockLLMClient(), max_revisions=max_r).run(
+            _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
+        )
+        expected_calls = 1 + (max_r + 1) * 2
+        assert len(result.calls) == expected_calls
+        assert result.rounds == max_r + 1
+        assert result.final_answer is not None
+
+    def test_approved_verdict_stops_early(self):
+        class MockApprovingReviewer(MockLLMClient):
+            def call(self, agent_role, prompt, round_index=0, want_logprobs=False):
+                if agent_role == "reviewer":
+                    return LLMCall(
+                        agent_role="reviewer", round_index=round_index,
+                        prompt=prompt,
+                        response_text="VERDICT: approved. All good.",
+                    )
+                return super().call(agent_role, prompt, round_index, want_logprobs)
+
+        result = RoleSeparatedPipeline(MockApprovingReviewer(), max_revisions=5).run(
+            _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
+        )
+        assert len(result.calls) == 3
+        assert result.rounds == 1
+
+    def test_rounds_property_increments_correctly(self):
+        result = RoleSeparatedPipeline(MockLLMClient(), max_revisions=1).run(
+            _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
+        )
+        assert result.rounds == 2
+
+    def test_critique_is_passed_forward(self):
+        class MockCritiquingReviewer(MockLLMClient):
+            def call(self, agent_role, prompt, round_index=0, want_logprobs=False):
+                if agent_role == "reviewer":
+                    return LLMCall(
+                        agent_role="reviewer", round_index=round_index,
+                        prompt=prompt,
+                        response_text="CRITIQUE: MISSING_CITATION_MARKER. Revise.",
+                    )
+                return super().call(agent_role, prompt, round_index, want_logprobs)
+
+        result = RoleSeparatedPipeline(MockCritiquingReviewer(), max_revisions=1).run(
+            _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
+        )
+        assert "MISSING_CITATION_MARKER" in result.calls[3].prompt
+
+
+class TestIsApproved:
+    def test_approved_verdict(self):
+        assert _is_approved("VERDICT: approved") is True
+
+    def test_not_approved(self):
+        assert _is_approved("VERDICT: not approved") is False
+
+    def test_unapproved(self):
+        assert _is_approved("VERDICT: unapproved, missing sources") is False
+
+    def test_needs_revision(self):
+        assert _is_approved("VERDICT: needs_revision") is False
 
 
 def test_p3_reflexive():
