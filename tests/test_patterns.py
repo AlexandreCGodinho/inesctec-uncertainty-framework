@@ -1,3 +1,5 @@
+import pytest
+
 from src.schemas import RunState, PatternID, LLMCall
 from src.llm_client import MockLLMClient
 from src.patterns.p1_governed import GovernedWorkflow, _retrieve_relevant_context
@@ -135,6 +137,27 @@ class TestRoleSeparatedPipeline:
             _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
         )
         assert "MISSING_CITATION_MARKER" in result.calls[3].prompt
+
+
+class TestMaxRevisionsValidation:
+    def test_negative_max_revisions_raises(self):
+        with pytest.raises(ValueError, match="non-negative integer"):
+            RoleSeparatedPipeline(MockLLMClient(), max_revisions=-1)
+
+    def test_non_int_max_revisions_raises(self):
+        with pytest.raises(ValueError, match="non-negative integer"):
+            RoleSeparatedPipeline(MockLLMClient(), max_revisions="two")
+
+    def test_missing_config_file_raises_filenotfounderror(self, monkeypatch):
+        import pathlib
+        original_exists = pathlib.Path.exists
+        def mock_exists(path_obj):
+            if "experiment.yaml" in str(path_obj):
+                return False
+            return original_exists(path_obj)
+        monkeypatch.setattr("pathlib.Path.exists", mock_exists)
+        with pytest.raises(FileNotFoundError, match="experiment.yaml not found"):
+            RoleSeparatedPipeline(MockLLMClient())
 
 
 class TestIsApproved:

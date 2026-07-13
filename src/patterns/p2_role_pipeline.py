@@ -96,6 +96,12 @@ class RoleSeparatedPipeline(Orchestrator):
         super().__init__(client)
         if max_revisions is None:
             cfg_path = Path(__file__).resolve().parents[2] / "config" / "experiment.yaml"
+            if not cfg_path.exists():
+                raise FileNotFoundError(
+                    f"experiment.yaml not found at {cfg_path}. "
+                    "Make sure you're running from the repo root or that "
+                    "config/experiment.yaml exists."
+                )
             with open(cfg_path, encoding="utf-8") as f:
                 cfg = yaml.safe_load(f)
             if not isinstance(cfg, dict):
@@ -104,6 +110,11 @@ class RoleSeparatedPipeline(Orchestrator):
                     f"(got {type(cfg).__name__}); check the file is valid YAML."
                 )
             max_revisions = cfg.get("pipeline_max_revisions", 2)
+        if not isinstance(max_revisions, int) or isinstance(max_revisions, bool) or max_revisions < 0:
+            raise ValueError(
+                f"pipeline_max_revisions must be a non-negative integer, "
+                f"got {max_revisions!r}."
+            )
         self.max_revisions = max_revisions
 
     def run(self, state: RunState) -> RunState:
