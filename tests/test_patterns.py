@@ -138,6 +138,16 @@ class TestRoleSeparatedPipeline:
         )
         assert "MISSING_CITATION_MARKER" in result.calls[3].prompt
 
+    def test_final_answer_excludes_reviewer_suffix(self):
+        result = RoleSeparatedPipeline(MockLLMClient()).run(
+            _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
+        )
+        assert "---" not in result.final_answer
+        assert "[Reviewer:" not in result.final_answer
+        assert "VERDICT" not in result.final_answer
+        reviewer_calls = [c for c in result.calls if c.agent_role == "reviewer"]
+        assert len(reviewer_calls) >= 1
+
 
 class TestMaxRevisionsValidation:
     def test_negative_max_revisions_raises(self):

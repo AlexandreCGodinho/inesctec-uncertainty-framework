@@ -172,9 +172,5 @@ class RoleSeparatedPipeline(Orchestrator):
                 break
 
         last_analyst = _find_analyst_by_round(state.calls, current_round)
-        last_reviewer = _find_reviewer_by_round(state.calls, current_round)
-        state.final_answer = (
-            f"{last_analyst.response_text if last_analyst else ''}\n\n"
-            f"---\n[Reviewer: {last_reviewer.response_text if last_reviewer else ''}]"
-        )
+        state.final_answer = last_analyst.response_text if last_analyst else ""
         return state
