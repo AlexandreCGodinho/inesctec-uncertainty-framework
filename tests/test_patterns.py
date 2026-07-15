@@ -230,9 +230,10 @@ def test_p4_deliberation():
         _make_state(PatternID.MULTI_PERSPECTIVE_DELIBERATION)
     )
     analyst_calls = [c for c in result.calls if c.agent_role.startswith("analyst_")]
-    assert len(analyst_calls) >= 3
+    assert len(analyst_calls) == 6
     judge_calls = [c for c in result.calls if c.agent_role == "judge"]
-    assert len(judge_calls) >= 1
+    assert len(judge_calls) == 2
+    assert len(result.calls) == 8
 
 
 def test_p4_agents_are_symmetric():

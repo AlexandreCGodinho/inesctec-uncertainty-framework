@@ -43,13 +43,13 @@ class MultiPerspectiveDeliberation(Orchestrator):
         seeds = config.get('pattern4_agent_seeds', [1234, 5678, 9012])
         num_agents = self.num_agents if self.num_agents is not None else config.get('pattern4_num_agents', 3)
         context_ceiling = config.get('pattern4_context_ceiling_tokens', 8000)
-        max_iters = config.get('pattern4_max_iterations', 2)
+        max_rounds = config.get('pattern4_max_rounds', 2)
         
         original_seed = self.client.seed
         analyst_responses = [""] * num_agents
         judge_feedback = ""
         
-        for r in range(max_iters + 1):
+        for r in range(max_rounds):
             # 1. Parallel Generation by Symmetric Agents
             for i in range(num_agents):
                 seed = seeds[i] if i < len(seeds) else original_seed + i
