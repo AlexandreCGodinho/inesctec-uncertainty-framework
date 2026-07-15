@@ -218,10 +218,10 @@ class TestIsApproved:
 
 
 def test_p3_reflexive():
-    result = ReflexiveSingleAgent(MockLLMClient(), max_iterations=2).run(
+    result = ReflexiveSingleAgent(MockLLMClient(), max_iterations=3).run(
         _make_state(PatternID.REFLEXIVE_SINGLE_AGENT)
     )
-    assert len(result.calls) > 1
+    assert len(result.calls) == 5
     assert result.final_answer is not None
 
 

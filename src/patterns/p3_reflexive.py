@@ -30,7 +30,7 @@ class ReflexiveSingleAgent(Orchestrator):
         current_draft = draft_call.response_text
 
         # 2. Self-Critique Loop
-        for r in range(1, max_iters + 1):
+        for r in range(1, max_iters):
             critique_prompt = (
                 f"Review the following draft for the query: '{state.query}' given the context: '{state.reference}'.\n"
                 f"Draft: {current_draft}\n\n"
