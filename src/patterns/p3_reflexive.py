@@ -3,6 +3,7 @@ import os
 from src.patterns.base import Orchestrator
 from src.schemas import RunState
 from src.llm_client import LLMClient
+from src.patterns.p2_role_pipeline import _is_approved
 
 class ReflexiveSingleAgent(Orchestrator):
     def __init__(self, client: LLMClient, max_iterations=None):
@@ -15,7 +16,7 @@ class ReflexiveSingleAgent(Orchestrator):
         with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
             
-        max_iters = self.max_iterations if self.max_iterations is not None else config.get('pipeline_max_revisions', 2)
+        max_iters = self.max_iterations if self.max_iterations is not None else config.get('pattern3_max_iterations', 3)
 
         # 1. Draft Generation
         draft_prompt = (
@@ -40,7 +41,7 @@ class ReflexiveSingleAgent(Orchestrator):
             critique_call = self.client.call(agent_role="solo_reflexive", prompt=critique_prompt, round_index=r)
             state.calls.append(critique_call)
             
-            if "VERDICT: approved" in critique_call.response_text:
+            if _is_approved(critique_call.response_text):
                 break
                 
             # If errors found, generate a new draft
