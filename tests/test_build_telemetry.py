@@ -206,30 +206,99 @@ def test_pattern3_u_R_computed_with_multiple_rounds():
 # Call structure mirrors p4_deliberation.py: K analysts at round 0, judge at round 1.
 
 def test_pattern4_u_C_computed_from_symmetric_agents():
+    """Multi-round: u_C must use only the LAST round's analyst answers."""
+    from src.metrics.u_C import compute_u_C
     state = _make_state(PatternID.MULTI_PERSPECTIVE_DELIBERATION)
+    # Round 0: analysts give initial answers, Judge says needs_revision
     state.calls = [
         LLMCall(agent_role="analyst_1", round_index=0, prompt="",
-                response_text="Answer A"),
+                response_text="Answer A0"),
         LLMCall(agent_role="analyst_2", round_index=0, prompt="",
-                response_text="Answer B"),
+                response_text="Answer B0"),
         LLMCall(agent_role="analyst_3", round_index=0, prompt="",
-                response_text="Answer C"),
+                response_text="Answer C0"),
+        LLMCall(agent_role="judge", round_index=0, prompt="",
+                response_text="VERDICT: needs_revision. More detail needed."),
+        # Round 1: analysts revise, Judge approves
+        LLMCall(agent_role="analyst_1", round_index=1, prompt="",
+                response_text="Answer A1"),
+        LLMCall(agent_role="analyst_2", round_index=1, prompt="",
+                response_text="Answer B1"),
+        LLMCall(agent_role="analyst_3", round_index=1, prompt="",
+                response_text="Answer C1"),
         LLMCall(agent_role="judge", round_index=1, prompt="",
-                response_text="Consensus answer"),
+                response_text="VERDICT: approved. Consensus reached."),
     ]
-    state.final_answer = "Consensus answer"
+    state.final_answer = "Consensus reached."
     t = build_telemetry(state)
     assert t.u_C is not None
+    expected = compute_u_C(["Answer A1", "Answer B1", "Answer C1"])
+    assert t.u_C == pytest.approx(expected)
 
 
-def test_pattern4_logprobs_from_judge_call():
+def test_pattern4_u_P_uses_last_round_analyst_logprobs():
+    """u_P for P4 averages logprobs from the last round's analysts."""
+    from src.metrics.u_P import compute_u_P
+    from src.metrics.u_F import compute_u_F
     state = _make_state(PatternID.MULTI_PERSPECTIVE_DELIBERATION)
     state.calls = [
         LLMCall(agent_role="analyst_1", round_index=0, prompt="",
-                response_text="A", logprobs=[-1.0]),
-        LLMCall(agent_role="judge", round_index=1, prompt="",
-                response_text="Consensus", logprobs=[-0.1]),
+                response_text="A", logprobs=[-0.5, -0.3]),
+        LLMCall(agent_role="analyst_2", round_index=0, prompt="",
+                response_text="B", logprobs=[-0.1, -0.2]),
+        LLMCall(agent_role="judge", round_index=0, prompt="",
+                response_text="VERDICT: approved."),
     ]
-    state.final_answer = "Consensus"
+    state.final_answer = "approved"
     t = build_telemetry(state)
     assert t.u_P is not None
+    averaged = [sum(vals) / len(vals) for vals in zip(*[[-0.5, -0.3], [-0.1, -0.2]])]
+    expected = compute_u_P(averaged, compute_u_F("approved", state.reference))
+    assert t.u_P == pytest.approx(expected)
+
+
+def test_pattern4_u_R_on_immediate_consensus():
+    """Single round (immediate approval) → u_R == 0.0 per Option B."""
+    state = _make_state(PatternID.MULTI_PERSPECTIVE_DELIBERATION)
+    state.calls = [
+        LLMCall(agent_role="analyst_1", round_index=0, prompt="",
+                response_text="Ans1"),
+        LLMCall(agent_role="analyst_2", round_index=0, prompt="",
+                response_text="Ans2"),
+        LLMCall(agent_role="analyst_3", round_index=0, prompt="",
+                response_text="Ans3"),
+        LLMCall(agent_role="judge", round_index=0, prompt="",
+                response_text="VERDICT: approved."),
+    ]
+    state.final_answer = "approved"
+    t = build_telemetry(state)
+    assert t.u_R == 0.0
+
+
+def test_pattern4_u_R_on_multi_round_refinement():
+    """Multiple Judge calls across rounds → u_R computed from judge traces."""
+    from src.metrics.u_R import compute_u_R
+    state = _make_state(PatternID.MULTI_PERSPECTIVE_DELIBERATION)
+    state.calls = [
+        LLMCall(agent_role="analyst_1", round_index=0, prompt="",
+                response_text="Ans1 r0"),
+        LLMCall(agent_role="analyst_2", round_index=0, prompt="",
+                response_text="Ans2 r0"),
+        LLMCall(agent_role="judge", round_index=0, prompt="",
+                response_text="VERDICT: needs_revision. X is missing."),
+        LLMCall(agent_role="analyst_1", round_index=1, prompt="",
+                response_text="Ans1 r1"),
+        LLMCall(agent_role="analyst_2", round_index=1, prompt="",
+                response_text="Ans2 r1"),
+        LLMCall(agent_role="judge", round_index=1, prompt="",
+                response_text="VERDICT: approved. All good."),
+    ]
+    state.final_answer = "All good."
+    t = build_telemetry(state)
+    assert t.u_R is not None
+    assert t.u_R > 0.0
+    expected = compute_u_R([
+        "VERDICT: needs_revision. X is missing.",
+        "VERDICT: approved. All good.",
+    ])
+    assert t.u_R == pytest.approx(expected)

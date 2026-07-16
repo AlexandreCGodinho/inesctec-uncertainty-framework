@@ -177,6 +177,13 @@ class TestRoleSeparatedPipeline:
 
 
 class TestMaxRevisionsValidation:
+    @pytest.fixture(autouse=True)
+    def _reset_config_cache(self):
+        import src.patterns.p2_role_pipeline as p2_module
+        p2_module._CONFIG_CACHE = None
+        yield
+        p2_module._CONFIG_CACHE = None
+
     def test_negative_max_revisions_raises(self):
         with pytest.raises(ValueError, match="non-negative integer"):
             RoleSeparatedPipeline(MockLLMClient(), max_revisions=-1)
