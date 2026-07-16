@@ -6,6 +6,28 @@ import yaml
 from src.patterns.base import Orchestrator
 from src.schemas import RunState, LLMCall
 
+_CONFIG_CACHE: dict | None = None
+
+
+def _load_experiment_config() -> dict:
+    global _CONFIG_CACHE
+    if _CONFIG_CACHE is None:
+        cfg_path = Path(__file__).resolve().parents[2] / "config" / "experiment.yaml"
+        if not cfg_path.exists():
+            raise FileNotFoundError(
+                f"experiment.yaml not found at {cfg_path}. "
+                "Make sure config/experiment.yaml exists."
+            )
+        with open(cfg_path, encoding="utf-8") as f:
+            cfg = yaml.safe_load(f)
+        if not isinstance(cfg, dict):
+            raise ValueError(
+                f"experiment.yaml at {cfg_path} did not parse to a mapping "
+                f"(got {type(cfg).__name__}); check the file is valid YAML."
+            )
+        _CONFIG_CACHE = cfg
+    return _CONFIG_CACHE
+
 
 RESEARCHER_PROMPT = """You are a RESEARCHER agent. Extract key facts from the context relevant to the query.
 Be precise, cite sources, do NOT add opinions.
@@ -95,20 +117,7 @@ class RoleSeparatedPipeline(Orchestrator):
     def __init__(self, client, max_revisions=None):
         super().__init__(client)
         if max_revisions is None:
-            cfg_path = Path(__file__).resolve().parents[2] / "config" / "experiment.yaml"
-            if not cfg_path.exists():
-                raise FileNotFoundError(
-                    f"experiment.yaml not found at {cfg_path}. "
-                    "Make sure you're running from the repo root or that "
-                    "config/experiment.yaml exists."
-                )
-            with open(cfg_path, encoding="utf-8") as f:
-                cfg = yaml.safe_load(f)
-            if not isinstance(cfg, dict):
-                raise ValueError(
-                    f"experiment.yaml at {cfg_path} did not parse to a mapping "
-                    f"(got {type(cfg).__name__}); check the file is valid YAML."
-                )
+            cfg = _load_experiment_config()
             max_revisions = cfg.get("pipeline_max_revisions", 2)
         if not isinstance(max_revisions, int) or isinstance(max_revisions, bool) or max_revisions < 0:
             raise ValueError(
@@ -172,9 +181,5 @@ class RoleSeparatedPipeline(Orchestrator):
                 break
 
         last_analyst = _find_analyst_by_round(state.calls, current_round)
-        last_reviewer = _find_reviewer_by_round(state.calls, current_round)
-        state.final_answer = (
-            f"{last_analyst.response_text if last_analyst else ''}\n\n"
-            f"---\n[Reviewer: {last_reviewer.response_text if last_reviewer else ''}]"
-        )
+        state.final_answer = last_analyst.response_text if last_analyst else ""
         return state

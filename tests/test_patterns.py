@@ -165,8 +165,25 @@ class TestRoleSeparatedPipeline:
         )
         assert "MISSING_CITATION_MARKER" in result.calls[3].prompt
 
+    def test_final_answer_excludes_reviewer_suffix(self):
+        result = RoleSeparatedPipeline(MockLLMClient()).run(
+            _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
+        )
+        assert "---" not in result.final_answer
+        assert "[Reviewer:" not in result.final_answer
+        assert "VERDICT" not in result.final_answer
+        reviewer_calls = [c for c in result.calls if c.agent_role == "reviewer"]
+        assert len(reviewer_calls) >= 1
+
 
 class TestMaxRevisionsValidation:
+    @pytest.fixture(autouse=True)
+    def _reset_config_cache(self):
+        import src.patterns.p2_role_pipeline as p2_module
+        p2_module._CONFIG_CACHE = None
+        yield
+        p2_module._CONFIG_CACHE = None
+
     def test_negative_max_revisions_raises(self):
         with pytest.raises(ValueError, match="non-negative integer"):
             RoleSeparatedPipeline(MockLLMClient(), max_revisions=-1)

@@ -82,6 +82,7 @@ class GovernedWorkflow(Orchestrator):
                 query=state.query,
             ),
             round_index=0,
+            want_logprobs=True,
         )
         state.calls.append(format_call)
 
