@@ -1,4 +1,5 @@
 import re
+import string
 
 from src.patterns.base import Orchestrator
 from src.schemas import RunState
@@ -7,23 +8,36 @@ from src.schemas import RunState
 # NOT produce an LLMCall and is NOT added to state.calls. Only the
 # two downstream LLM calls (Draft, Format) are recorded in state.calls.
 
+_STOPWORDS = {
+    "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
+    "what", "which", "who", "whom", "this", "that", "these", "those",
+    "of", "in", "on", "at", "to", "for", "with", "as", "by", "and", "or",
+    "but", "if", "do", "does", "did", "not", "it", "its", "so", "than",
+}
+
+
+def _extract_query_terms(query: str) -> set[str]:
+    """Strip punctuation, lowercase, and remove stopwords from the query."""
+    no_punct = query.translate(str.maketrans("", "", string.punctuation))
+    words = no_punct.lower().split()
+    return {w for w in words if w not in _STOPWORDS and w}
+
 
 def _retrieve_relevant_context(context: str, query: str) -> str:
-    """Deterministic lexical filter: keep sentences whose normalized words
-    share at least one token with the query. Pure Python, no embeddings."""
-    query_words = set(query.lower().split())
-
-    sentences = re.split(r"(?<=[.!?])\s+", context.strip())
-    if not sentences or not query_words:
+    query_terms = _extract_query_terms(query)
+    if not query_terms:
         return context
 
-    kept = []
-    for sent in sentences:
-        sent_lower = sent.lower()
-        if any(w in sent_lower for w in query_words):
-            kept.append(sent)
+    sentences = re.split(r"(?<=[.!?])\s+", context.strip())
+    relevant = []
+    for sentence in sentences:
+        sentence_words = set(
+            sentence.translate(str.maketrans("", "", string.punctuation)).lower().split()
+        )
+        if query_terms & sentence_words:
+            relevant.append(sentence)
 
-    return " ".join(kept) if kept else context
+    return " ".join(relevant) if relevant else context
 
 
 DRAFTER_PROMPT = """You are a research analyst. Using the context below, draft an answer to the question.

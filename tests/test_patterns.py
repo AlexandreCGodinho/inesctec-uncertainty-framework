@@ -47,6 +47,33 @@ class TestGovernedWorkflow:
 
 
 class TestRetrieveRelevantContext:
+    def test_filters_correctly_with_stopwords_and_punctuation(self):
+        context = (
+            "Paris is the capital of France. "
+            "The Eiffel Tower is a famous landmark. "
+            "Bananas are a good source of potassium."
+        )
+        result = _retrieve_relevant_context(context, "What is AI?")
+        assert result == context or result == ""
+
+    def test_filters_out_stopword_only_matches(self):
+        context = (
+            "Paris is the capital of France. "
+            "Bananas are a good source of potassium."
+        )
+        result = _retrieve_relevant_context(context, "What is the capital?")
+        assert "Paris" in result
+        assert "Bananas" not in result
+
+    def test_word_boundary_matching_avoids_substring_false_positives(self):
+        context = (
+            "The main office is located downtown. "
+            "AI research is advancing rapidly."
+        )
+        result = _retrieve_relevant_context(context, "Tell me about AI?")
+        assert "AI research" in result
+        assert "main office" not in result
+
     def test_filters_irrelevant_sentences(self):
         context = (
             "AI is artificial intelligence. "
@@ -201,10 +228,10 @@ class TestIsApproved:
 
 
 def test_p3_reflexive():
-    result = ReflexiveSingleAgent(MockLLMClient(), max_iterations=2).run(
+    result = ReflexiveSingleAgent(MockLLMClient(), max_iterations=3).run(
         _make_state(PatternID.REFLEXIVE_SINGLE_AGENT)
     )
-    assert len(result.calls) > 1
+    assert len(result.calls) == 5
     assert result.final_answer is not None
 
 
@@ -213,9 +240,10 @@ def test_p4_deliberation():
         _make_state(PatternID.MULTI_PERSPECTIVE_DELIBERATION)
     )
     analyst_calls = [c for c in result.calls if c.agent_role.startswith("analyst_")]
-    assert len(analyst_calls) == 3
+    assert len(analyst_calls) == 6
     judge_calls = [c for c in result.calls if c.agent_role == "judge"]
-    assert len(judge_calls) == 1
+    assert len(judge_calls) == 2
+    assert len(result.calls) == 8
 
 
 def test_p4_agents_are_symmetric():

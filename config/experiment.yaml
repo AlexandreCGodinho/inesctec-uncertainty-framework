@@ -10,4 +10,5 @@ samples_per_dataset:                 # set during Phase 1
   finqa: null
   ifeval: null
 pipeline_max_revisions: 2          # Pattern 2 revision-loop cap; Doc 01 Section 3
-
+pattern3_max_iterations: 3         # 3 reasoning artifacts (1 draft + 2 revisions) = 5 LLM calls per query
+pattern4_max_iterations: 2         # Pattern 4 max refinement rounds
