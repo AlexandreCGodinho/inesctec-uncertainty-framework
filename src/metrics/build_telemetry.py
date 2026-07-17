@@ -141,9 +141,18 @@ def build_telemetry(state: RunState) -> Telemetry:
     U_surface = compute_surface(u_L, u_F, u_P)
     U_composite = compute_composite(pattern_id, u_L, u_F, u_P, u_R, u_C)
 
+    termination_reason = "truncated" if any(c.truncated for c in state.calls) else "completed"
+
     return Telemetry(
         run_id=state.run_id,
         pattern=state.pattern,
+        query_id=state.query_id,
+        seed=state.seed,
+        final_answer=state.final_answer,
+        termination_reason=termination_reason,
+        tokens_prompt=sum(c.tokens_prompt for c in state.calls),
+        tokens_completion=sum(c.tokens_completion for c in state.calls),
+        latency_ms=round(sum(c.latency_ms for c in state.calls), 1),
         u_L=u_L,
         u_F=u_F,
         u_C=u_C,

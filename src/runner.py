@@ -7,6 +7,7 @@ orchestrator list as a parameter.
 
 import json
 import logging
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -211,6 +212,7 @@ def run_pilot(
                         query_id=query_data["query_id"],
                         query=query_data["query"],
                         reference=query_data["reference"],
+                        seed=client.seed,
                     )
                     orchestrator = orchestrator_cls(client)
                     state = orchestrator.run(state)
@@ -232,7 +234,7 @@ if __name__ == "__main__":
     )
 
     import yaml
-    from src.llm_client import LLMClient
+    from src.llm_client import LLMClient, check_server_available
     from src.patterns.p1_governed import GovernedWorkflow
     from src.patterns.p2_role_pipeline import RoleSeparatedPipeline
     from src.patterns.p3_reflexive import ReflexiveSingleAgent
@@ -243,6 +245,13 @@ if __name__ == "__main__":
         config = yaml.safe_load(f)
 
     client = LLMClient()
+
+    if not check_server_available(client.api_base):
+        logger.critical(
+            "vLLM server at %s is not reachable. Aborting pilot.",
+            client.api_base,
+        )
+        sys.exit(1)
 
     datasets = ["popqa", "ifeval", "finqa", "livebench"]
     patterns = [

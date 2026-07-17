@@ -149,6 +149,11 @@ class TestWriteTelemetryJsonl:
             pattern=PatternID.ROLE_SEPARATED_PIPELINE,
             u_L=0.0, u_F=0.0, u_P=0.0,
             U_surface=0.0, U_composite=0.0,
+            query_id="q1", seed=42,
+            final_answer="test answer",
+            termination_reason="completed",
+            tokens_prompt=10, tokens_completion=5,
+            latency_ms=12.3,
         )
         write_telemetry_jsonl(t, "ifeval", output_dir=str(tmp_path))
 
@@ -157,6 +162,13 @@ class TestWriteTelemetryJsonl:
         assert obj["run_id"] == "r1"
         assert obj["pattern"] == 2
         assert obj["u_L"] == 0.0
+        assert obj["query_id"] == "q1"
+        assert obj["seed"] == 42
+        assert obj["final_answer"] == "test answer"
+        assert obj["termination_reason"] == "completed"
+        assert obj["tokens_prompt"] == 10
+        assert obj["tokens_completion"] == 5
+        assert obj["latency_ms"] == 12.3
 
     def test_file_per_dataset_pattern_combination(self, tmp_path):
         t1 = Telemetry(run_id="r1", pattern=PatternID.GOVERNED_WORKFLOW)
@@ -206,6 +218,13 @@ class TestRunPilot:
             assert telemetry.u_F is not None
             assert telemetry.U_surface is not None
             assert telemetry.U_composite is not None
+            assert telemetry.query_id in ("q1", "q2", "q3")
+            assert telemetry.seed == 0  # MockLLMClient.seed == 0
+            assert telemetry.final_answer is not None
+            assert telemetry.termination_reason == "completed"
+            assert telemetry.tokens_prompt >= 0
+            assert telemetry.tokens_completion >= 0
+            assert telemetry.latency_ms >= 0
 
     def test_end_to_end_with_all_patterns(self, synthetic_queries, tmp_path, monkeypatch):
         monkeypatch.setattr(
@@ -236,6 +255,13 @@ class TestRunPilot:
                 assert telemetry.u_F is not None
                 assert telemetry.U_surface is not None
                 assert telemetry.U_composite is not None
+                assert telemetry.query_id in ("q1", "q2")
+                assert telemetry.seed == 0
+                assert telemetry.final_answer is not None
+                assert telemetry.termination_reason == "completed"
+                assert telemetry.tokens_prompt >= 0
+                assert telemetry.tokens_completion >= 0
+                assert telemetry.latency_ms >= 0
 
     def test_no_query_skips_gracefully(self, monkeypatch, tmp_path):
         monkeypatch.setattr(
