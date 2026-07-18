@@ -1,0 +1,5 @@
+{"query_id": "f1", "exe_ans": 12.5, "program": "add(10, 2.5)"}
+{"query_id": "f2", "exe_ans": 100.0, "program": "add(50, 50)"}
+{"query_id": "f3", "exe_ans": 42.0, "program": "multiply(6, 7)"}
+{"query_id": "l1", "ground_truth": "true"}
+{"query_id": "l2", "ground_truth": "true"}
