@@ -57,6 +57,7 @@ Pattern 4 runs with exactly **K = 3 agents**, and the agents must be **symmetric
 * **Formula:** for M traces and K rounds,
   $$u_R = \frac{1}{M(K-1)} \sum_{i=1}^{M} \sum_{k=2}^{K} \text{EuclideanDistance}(E(r_i^{(k)}), E(r_i^{(k-1)}))$$
   normalized to [0, 1] by the maximum observed distance in the Phase 1 calibration set.
+* **Note (Consensus Effect):** In cases of immediate consensus, $u_R$ is zero, which structurally inflates the metric with zeros for easy queries. For analysis, the failure detector must be reported **with and without** the $u_R$ component. Furthermore, the existence of refinement loops must be extracted and treated as an independent binary signal (`refinement_triggered: Yes/No`).
 
 ### 2.5 u_P (Plausibility Paradox)
 * **Concept:** the gap between fluency and factual fidelity: highly fluent but factually wrong output, the primary driver of automation bias.
@@ -136,3 +137,26 @@ Consequences for analysis:
 1. u_F and u_P are never interpreted as two independent confirmations of factuality; effective weight of factual content in U(x) is w_F plus the u_F-mediated share of w_P.
 2. All Phase 3 reports include the per-component breakdown, never only the composite.
 3. Correlations between components are computed and reported in Phase 3 as a validity check of this declared structure.
+
+---
+
+## 6. Accuracy Reporting Specification
+
+1) Primary output is a per-item score table, not percentages. One row per (query_id, pattern, seed), with: dataset, official metric value(s), termination reason, tokens, latency.
+All downstream analysis (pattern comparison, U(x) join, cost normalization) reads from this table. The harness adapter from the bridge task produces it.
+
+2) Accuracy is reported per (pattern x dataset), using each benchmark's official metric, named explicitly. PopQA: "alias-match accuracy". FinQA: "execution accuracy" (program accuracy reported separately). IFEval: all four official variants, with prompt-level strict as the headline. LiveBench: official per-category scores, benchmark version pinned and recorded. A generic "Accuracy (%)" label is not used anywhere.
+
+3) No pooled number across datasets. If a summary is needed, use a macro-average with equal weight per dataset, labeled as such.
+Item-level pooling is forbidden: as it weights by dataset size.
+
+4) Comparisons are paired. All patterns run on the same queries. Reference pattern: [P1]. Use McNemar's test or a paired bootstrap over items, and report confidence intervals for the differences, not for individual values.
+Paired tests are what gives us power when differences are a few points.
+
+5) Multiple comparisons: Benjamini-Hochberg FDR (look for it on Google or AI) across the pattern x dataset test family, consistent with our other work.
+
+6) Variance: multiple seeds for Pattern 4 only (budget constraint; three full-run seeds would consume ~450 CUs), with between-seed variance reported separately. P1 to P3 get paired-bootstrap confidence intervals.
+
+7) Scoring rules are frozen here, before results. Cap-exhausted Pattern 4 answers, timeouts, and parse failures count as: [incorrect]. The adapter flags these categories.
+
+8) Selective accuracy: accuracy as a function of coverage, using U(x) to abstain, plus AUROC of U(x) as a failure detector. This is the analysis that carries the FAccT claim; everything above exists to make it possible.
