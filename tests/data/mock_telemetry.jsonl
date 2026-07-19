@@ -1,0 +1,5 @@
+{"run_id": "r1", "pattern": 1, "query_id": "f1", "seed": 42, "final_answer": "add(10, 2.5)"}
+{"run_id": "r2", "pattern": 1, "query_id": "f2", "seed": 42, "final_answer": "add(50, 50)"}
+{"run_id": "r3", "pattern": 1, "query_id": "f3", "seed": 42, "final_answer": "I don't know the answer. The math is too hard."}
+{"run_id": "r4", "pattern": 2, "query_id": "l1", "seed": 42, "final_answer": "It is true"}
+{"run_id": "r5", "pattern": 2, "query_id": "l2", "seed": 42, "final_answer": "False."}

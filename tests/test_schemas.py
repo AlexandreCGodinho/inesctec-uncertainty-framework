@@ -30,3 +30,19 @@ def test_telemetry_defaults():
     t = Telemetry(run_id="t1", pattern=PatternID.GOVERNED_WORKFLOW)
     assert t.u_L is None
     assert t.truncation_flag is False
+    assert t.query_id == ""
+    assert t.seed == 0
+    assert t.final_answer is None
+    assert t.termination_reason is None
+    assert t.tokens_prompt == 0
+    assert t.tokens_completion == 0
+    assert t.latency_ms == 0.0
+
+
+def test_run_state_with_seed():
+    state = RunState(
+        run_id="t1", pattern=PatternID.GOVERNED_WORKFLOW,
+        dataset="popqa", query_id="q1", query="Q?", reference="R",
+        seed=42,
+    )
+    assert state.seed == 42

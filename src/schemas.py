@@ -20,6 +20,9 @@ class LLMCall(BaseModel):
     response_text: str
     logprobs: list[float] | None = None  # required in Phase 3 for u_P
     truncated: bool = False              # KV-cache control, doc 02 Section 4.2
+    latency_ms: float = 0.0
+    tokens_prompt: int = 0
+    tokens_completion: int = 0
 
 
 class RunState(BaseModel):
@@ -31,6 +34,7 @@ class RunState(BaseModel):
     query: str
     reference: str                        # ground truth / reference context
     calls: list[LLMCall] = Field(default_factory=list)
+    seed: int = 0
     final_answer: str | None = None
     started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -51,3 +55,10 @@ class Telemetry(BaseModel):
     U_surface: float | None = None        # doc 03, Section 4.1
     U_composite: float | None = None      # doc 03, Section 3.2 weights
     truncation_flag: bool = False
+    query_id: str = ""
+    seed: int = 0
+    final_answer: str | None = None
+    termination_reason: str | None = None
+    tokens_prompt: int = 0
+    tokens_completion: int = 0
+    latency_ms: float = 0.0
