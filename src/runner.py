@@ -89,9 +89,13 @@ def load_dataset_queries(
     logger.info("Loading dataset %s (sample_size=%s)", hf_id, sample_size)
 
     try:
-        hf_dataset = hf_datasets.load_dataset(
-            hf_id, split="train", trust_remote_code=True
-        )
+        ds_dict = hf_datasets.load_dataset(hf_id, trust_remote_code=True)
+        if "train" in ds_dict:
+            hf_dataset = ds_dict["train"]
+        elif "test" in ds_dict:
+            hf_dataset = ds_dict["test"]
+        else:
+            hf_dataset = ds_dict[list(ds_dict.keys())[0]]
     except Exception as exc:
         raise RuntimeError(
             f"Failed to download dataset '{hf_id}'. "

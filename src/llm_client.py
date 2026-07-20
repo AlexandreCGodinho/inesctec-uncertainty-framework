@@ -49,18 +49,27 @@ def _load_experiment_config() -> dict:
 
 
 class LLMClient:
-    LITELLM_PREFIX = "openai/"
+    LITELLM_PREFIX = "groq/"
 
     def __init__(self, api_base: str | None = None,
                  model: str | None = None,
                  seed: int | None = None):
         cfg = _load_experiment_config()
-        db = "http://localhost:8000/v1"
+        
+        import os
+        from dotenv import load_dotenv
+        load_dotenv()
+        self.api_key = os.getenv("GROQ_API_KEY")
+        
+        db = "https://api.groq.com/openai/v1"
         self.api_base = db if api_base is None else api_base
-        raw_model = model if model is not None else cfg["model_id"]
+        
+        # We will use Llama 3.1 8B on Groq because Gemma was decommissioned
+        raw_model = "llama-3.1-8b-instant"
         if not raw_model.startswith(self.LITELLM_PREFIX):
             raw_model = self.LITELLM_PREFIX + raw_model
         self.model = raw_model
+        
         self.seed = cfg["base_seed"] if seed is None else seed
         self._timeout = cfg.get("request_timeout_seconds", 60)
         self._completion = None
@@ -115,8 +124,11 @@ class LLMClient:
         timeout = timeout_seconds if timeout_seconds is not None else self._timeout
         start = time.perf_counter()
 
+        # Groq's Llama 3.1 does not support logprobs
+        want_logprobs = False
+
         r = self._call_with_retry(
-            model=self.model, api_base=self.api_base, api_key="not-needed",
+            model=self.model, api_base=self.api_base, api_key=self.api_key,
             messages=[{"role": "user", "content": prompt}],
             logprobs=want_logprobs, top_logprobs=5 if want_logprobs else None,
             temperature=0.7, seed=self.seed, timeout=timeout,
@@ -128,12 +140,16 @@ class LLMClient:
         truncated = finish_reason == "length"
 
         lps = None
-        if want_logprobs and r.choices[0].logprobs:
+        if want_logprobs and getattr(r.choices[0], "logprobs", None):
             lps = [t.logprob for t in r.choices[0].logprobs.content]
 
         usage = getattr(r, "usage", None)
         tokens_prompt = usage.prompt_tokens if usage else 0
         tokens_completion = usage.completion_tokens if usage else 0
+        
+        # Throttle to stay safely under Groq's 6000 TPM (Tokens Per Minute) limit
+        # The deliberation agent uses ~1500 tokens, so 4 requests per minute is the maximum safe limit.
+        time.sleep(16)
 
         return LLMCall(
             agent_role=agent_role, round_index=round_index,
@@ -160,15 +176,19 @@ class MockLLMClient(LLMClient):
 def check_server_available(api_base: str, timeout: float = 5.0) -> bool:
     try:
         from litellm import completion
-        cfg = _load_experiment_config()
-        model = cfg["model_id"]
-        if not model.startswith("openai/"):
-            model = "openai/" + model
+        import os
+        from dotenv import load_dotenv
+        load_dotenv()
+        
+        model = "groq/llama-3.1-8b-instant"
+        api_key = os.getenv("GROQ_API_KEY")
+        
         r = completion(
-            model=model, api_base=api_base, api_key="not-needed",
+            model=model, api_base="https://api.groq.com/openai/v1", api_key=api_key,
             messages=[{"role": "user", "content": "ping"}],
             max_tokens=1, timeout=timeout,
         )
         return bool(r.choices)
-    except Exception:
+    except Exception as e:
+        logger.error(f"Groq API connection failed: {e}")
         return False

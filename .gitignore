@@ -5,3 +5,4 @@ telemetry/*.jsonl
 *.pyc
 
 AGENTS.md
+.env
