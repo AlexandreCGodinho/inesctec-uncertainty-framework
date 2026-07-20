@@ -1,0 +1,28 @@
+# 5W2H Action Plan
+
+Este documento mapeia as ações táticas e a reestruturação decorrentes da revisão metodológica do Sprint Plan, estruturadas na matriz de gestão 5W2H (What, Why, Who, When, Where, How, How much).
+
+> **Nota de Alinhamento Estratégico:** Esta matriz operacionaliza e distribui tecnicamente os 8 itens normativos da nova secção *"Accuracy Reporting Specification"* introduzida no Doc 03. As etiquetas `[Ref: Spec Item X]` mapeiam diretamente cada tarefa à regra matemática respetiva.
+
+## Parte 1: Problemas Sérios (Accountability e Junção de Dados)
+
+| What (O Quê?) | Why (Porquê?) | Who (Quem?) | When (Quando?) | Where (Onde?) | How (Como?) | How much (Esforço) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Garantir chave primária única** `(query_id, pattern, seed)` `[Ref: Spec Item 1]` | Pré-requisito de engenharia. Sem isto, a junção de dados é impossível. | Alexandre (Gestão) / Pedro & Fedi (Execução) | Imediato (Antes do Piloto) | Scripts de output (JSONL) | Diretiva aos estagiários para reverem os esquemas do dicionário gerado nos JSONL. | **Baixo:** Correção simples de chaves no código. |
+| **Congelar versão do LiveBench** `[Ref: Spec Item 2]` | O *dataset* altera perguntas mensalmente. Sem isto, a reprodutibilidade morre. | Pedro | Imediato (Antes do Piloto) | Código do Evaluation Engine | Executar o congelamento da *release*/*versão* usada e guardar os IDs das *queries* amostradas. | **Baixo:** < 1 hora. |
+| **Data Join:** Unir U(x) com Correção `[Ref: Spec Item 8]` | Provar *Accountability* (que a incerteza prevê a falha). É o core da FAccT. | Fedi | Semana 3 | Scripts de análise (Pandas) | Fazer o *merge* das duas tabelas (telemetria e grading) linha a linha, usando a chave primária alinhada. | **Médio:** Meio dia. |
+| **Plotar Risk-Coverage e AUROC** `[Ref: Spec Item 8]` | São as métricas estatísticas de deteção de falha válidas para suportar a tese de Human-in-the-Loop. | Fedi | Semana 3 | Notebooks de Visualização | Calcular AUROC para medir a capacidade do U(x) detetar respostas erradas. Gerar gráficos Risk-Coverage: ordenar as queries pelo U(x), abster progressivamente as mais incertas e plotar o aumento da accuracy. | **Alto:** 1 a 2 dias. |
+| **Revisão da Narrativa (Accountability)** | Garantir que a linguagem do relatório final serve o objetivo da conferência FAccT. | Alexandre | Fim da Semana 3 | Relatório de Resultados / Paper | Auditar o relatório para focar na predição de falhas ("O modelo sabe quando erra?") em vez da performance bruta. | **Baixo:** Revisão editorial. |
+
+## Parte 2: Erros Pontuais (Estatística, Custo e Protocolos)
+
+| What (O Quê?) | Why (Porquê?) | Who (Quem?) | When (Quando?) | Where (Onde?) | How (Como?) | How much (Esforço) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Corrigir Terminologia Oficial** | Evitar confusão nos *docs* e *bugs* no código. | Alexandre | Imediato | Doc 03 e Sprint Plan | Trocar "architecture" por "pattern", e usar o nome exato da variável `pattern4_max_iterations`. | **Baixo:** Edição de texto. |
+| **Usar os Harnesses Oficiais** `[Ref: Spec Item 2]` | Prevenir *bugs* de *scoring* que invalidariam a comparação. | Pedro (FinQA, LiveBench) / Fedi (IFEval, PopQA) | Semana 3 | Evaluation Engine | Eliminar *graders* manuais; importar e adaptar o código fonte de avaliação original dos datasets. | **Alto:** 2 dias. |
+| **Gerar Tabela de Scores Per-Item** `[Ref: Spec Items 1 e 3]` | Um "Overall Accuracy" único é um erro matemático que funde métricas incompatíveis e destrói a variância necessária para testes de significância emparelhados. | Pedro & Fedi (Gerar) / Fedi (Análise) | Semana 3 | Adaptação dos Harnesses | Cada estagiário produz uma tabela onde cada registo guarda o(s) valor(es) da métrica oficial, mais uma coluna binária de headline por dataset; o Fedi usa o Pattern 1 como *baseline*. | **Médio:** 1 dia. |
+| **Codificação Qualitativa Anónima** | O conhecimento prévio sobre qual o *pattern* gerou o texto introduz viés de confirmação na classificação do tipo de erro. | Pedro (Coder 1) / Alexandre (Coder 2) | Semana 3 | Análise Qualitativa | Omitir a identificação dos *patterns* nos *logs* antes da leitura; classificar o tipo de erro com uma lista estrita de categorias; testar a validade da classificação fazendo um segundo investigador (Alexandre) avaliar uma amostra (Kappa de Cohen). | **Médio:** 1 dia (análise humana). |
+| **Registo do `termination_reason`** `[Ref: Spec Item 7]` | Ignorar respostas falhadas esconde as debilidades do *pattern*. | Fedi | Semana 3 | Telemetria (JSONL) | Registar consenso vs cap na telemetria e usar isso como covariável explicativa do erro, não descartando os dados. | **Baixo:** 1 a 2 horas. |
+| **Desdobramento do Sensor $u_R$** | O $u_R$ inflaciona de zeros em perguntas fáceis, camuflando o seu poder. | Fedi | Semana 3 | Análise do AUROC | Reportar detetor de falhas com e sem $u_R$; extrair a existência de loops de refinamento como sinal binário (`refinement_triggered: Yes/No`). | **Médio:** Meio dia. |
+| **Controlo Híbrido de Variância e FDR** `[Ref: Spec Items 4, 5 e 6]` | Medir erro estatístico com precisão sem estourar o orçamento da API. | Pedro (Execução P4) / Fedi (Análise) | Semana 3 | Orquestração & Análise | Correr P4 com múltiplas *seeds*; usar *Bootstrap* emparelhado (P1-3) e aplicar correção Benjamini-Hochberg FDR nas múltiplas comparações. | **Médio:** 1 dia. |
+| **Fronteira de Pareto (Custo)** | O Pattern 4 custa 3x mais. Comparação de *accuracy* bruta esconde esse *trade-off*. | Fedi | Semana 3 | Notebooks de Visualização | Adicionar à telemetria: *Accuracy* vs Tokens / Latência (Normalização de custo). | **Baixo:** Meio dia. |
