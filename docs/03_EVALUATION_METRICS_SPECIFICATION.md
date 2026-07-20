@@ -1,6 +1,6 @@
 # 03. Evaluation Metrics Specification
 **INESC TEC Summer Research Internship 2026**
-Version 2.0 (supersedes EVALUATION_METRICS_SPECIFICATION.md v1). **This is the single canonical source for every metric definition.** Any table or description of metrics found elsewhere is informal and yields to this document. Owns: component definitions and formulas, variable dependency graph, activation matrix, comparison protocol. For datasets and model see `02_EXPERIMENTAL_DESIGN.md`.
+Version 2.0 (supersedes EVALUATION_METRICS_SPECIFICATION.md v1). **This is the single canonical source for every metric definition.** Any table or description of metrics found elsewhere is informal and yields to this document. Owns: component definitions and formulas, variable dependency graph, activation matrix, comparison protocol, accuracy reporting protocol. For datasets and model see `02_EXPERIMENTAL_DESIGN.md`.
 
 ---
 
@@ -143,20 +143,23 @@ Consequences for analysis:
 ## 6. Accuracy Reporting Specification
 
 1) Primary output is a per-item score table, not percentages. One row per (query_id, pattern, seed), with: dataset, official metric value(s), termination reason, tokens, latency.
-All downstream analysis (pattern comparison, U(x) join, cost normalization) reads from this table. The harness adapter from the bridge task produces it.
+In the primary key, seed is the run seed. Pattern 4's K = 3 agent seeds are derived deterministically from the run seed (e.g., agent_seed_i = run_seed * 100 + i; the exact rule is Pedro's implementation choice, but it must be deterministic and documented) and never appear in the key. Pattern 4 runs with 3 run seeds; Patterns 1-3 with a single run seed.
+All downstream analysis (pattern comparison, U(x) join, cost normalization) reads from this table. The harness adapter from the bridge task produces it. Correctness scores use accuracy semantics (1 = correct); uncertainty components use u-semantics (1 = maximally uncertain); the prefix identifies the family.
 
 2) Accuracy is reported per (pattern x dataset), using each benchmark's official metric, named explicitly. PopQA: "alias-match accuracy". FinQA: "execution accuracy" (program accuracy reported separately). IFEval: all four official variants, with prompt-level strict as the headline. LiveBench: official per-category scores, benchmark version pinned and recorded. A generic "Accuracy (%)" label is not used anywhere.
 
 3) No pooled number across datasets. If a summary is needed, use a macro-average with equal weight per dataset, labeled as such.
-Item-level pooling is forbidden: as it weights by dataset size.
+Item-level pooling is forbidden: it silently weights by dataset size.
 
-4) Comparisons are paired. All patterns run on the same queries. Reference pattern: [P1]. Use McNemar's test or a paired bootstrap over items, and report confidence intervals for the differences, not for individual values.
-Paired tests are what gives us power when differences are a few points.
+4) Comparisons are paired. All patterns run on the same queries. Reference pattern: P1 (the simplest-pattern baseline; "single-agent" would be ambiguous, since P3 is also single-agent). The test depends on the data type of the headline column: for the binary headlines (PopQA alias match, FinQA execution accuracy, IFEval prompt-level strict), use McNemar's test, exact version if discordant pairs are few; for LiveBench's numeric per-category scores, use a paired bootstrap over per-item differences. In all cases report confidence intervals for the differences, not for individual values. Paired tests are what gives us power when differences are a few points.
 
-5) Multiple comparisons: Benjamini-Hochberg FDR (look for it on Google or AI) across the pattern x dataset test family, consistent with our other work.
+5. Multiple comparisons: Benjamini-Hochberg FDR across the pattern x dataset test family, implemented with statsmodels.stats.multitest.multipletests(pvals, method='fdr_bh'). Consistent with our other work.
 
 6) Variance: multiple seeds for Pattern 4 only (budget constraint; three full-run seeds would consume ~450 CUs), with between-seed variance reported separately. P1 to P3 get paired-bootstrap confidence intervals.
 
-7) Scoring rules are frozen here, before results. Cap-exhausted Pattern 4 answers, timeouts, and parse failures count as: [incorrect]. The adapter flags these categories.
+7. Scoring rules are frozen here, before results. Two distinct cases:
+(a) No usable answer exists (timeout, crash, unparseable output): score = 0 (incorrect), flagged by the adapter (parse_error / timeout).
+(b) Cap-exhausted Pattern 4 answers (termination_reason = cap): the emitted final_answer IS scored normally by the official harness. Cap exhaustion is recorded in termination_reason, used as an explanatory covariate, and accuracy is additionally reported stratified by termination_reason.
+**Rationale**: forcing score = 0 on cap-exhausted items would make U(x) predict a label it helped construct (u_R and refinement_triggered are elevated exactly on those queries), circularly inflating AUROC and the risk-coverage curves. Scoring the emitted answer and stratifying preserves the failure signal without fabricating it. The adapter flags these categories; this spec, not the analyst, decides them.
 
 8) Selective accuracy: accuracy as a function of coverage, using U(x) to abstain, plus AUROC of U(x) as a failure detector. This is the analysis that carries the FAccT claim; everything above exists to make it possible.

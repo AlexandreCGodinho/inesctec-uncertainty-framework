@@ -95,6 +95,10 @@ Pattern 4 executes with **exactly three symmetric agents** in every run, recorde
 * **Cost impact.** Relative to a two-agent configuration, K = 3 adds roughly 50% inference volume to Pattern 4 in Phase 3. This is absorbed, if necessary, by reducing the per-dataset sample size, a trade accepted because a u_C built on a single pairwise distance (K = 2) would not support the study's main comparison.
 * **Sensitivity check.** Phase 2 includes a small-sample K = 2 vs K = 3 comparison on FinQA, so the final report can state the choice was empirically examined.
 
+### 4.4 Generation Imbalance (Pattern 1 vs Pattern 2)
+
+We explicitly acknowledge a structural imbalance in compute volume between Pattern 1 (simplest-pattern baseline) and Pattern 2 (role-separated pipeline). By design, Pattern 1 executes 2 LLM generations per query, whereas Pattern 2 requires 3 generations to complete its workflow. This asymmetry is inherent to the architectural patterns being evaluated rather than a methodological oversight. Consequently, any performance differences between P1 and P2 must be interpreted with the understanding that they are not strictly compute-matched.
+
 ---
 
 ## 5. Dataset Selection
@@ -138,3 +142,20 @@ All phases run exclusively on the A100 environment with the base model of Sectio
 ### Phase 3: Production Evaluation and Telemetry Extraction
 * **Objective:** batch execution to extract final U(x) telemetry.
 * **Protocol:** full-scale inference across all four datasets and all four patterns. vLLM extracts log-probabilities for u_P. Telemetry is synchronized to the validation repository. Analysis follows the comparison protocol of `03_EVALUATION_METRICS_SPECIFICATION.md`, Section 4.
+
+## 7. Design Constants
+
+The following parameters are designated as **Design Constants**. None of these may be changed without prior written approval from Alexandre or Álvaro:
+1. **Base Model**: Gemma 4 12B IT (bfloat16)
+2. **Inference Provider**: vLLM
+3. **Hardware Envelope**: A100 (40 GB VRAM)
+4. **Datasets and Sampled Query IDs**
+5. **Prompts after the freeze**
+6. **Iteration caps**
+7. **Ensemble Size**: K = 3
+
+## 8. Pilot Data Status
+
+The pilot of 18-19/07 is formally designated as the **development split (Llama 3.1 8B via Groq)**.
+Prompt tuning is allowed on pilot data only; the final report run uses prompts frozen at commit `<hash>` prior to launch, on a disjoint sampled query set.
+Prompt-engineering effort is equalized across patterns and documented here.
