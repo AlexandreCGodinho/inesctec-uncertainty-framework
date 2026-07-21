@@ -70,7 +70,7 @@ agentic-eval/
 ├── config/
 │   ├── experiment.yaml           # sample sizes, seeds, model id, pattern4_num_agents
 │   └── activation_matrix.yaml    # weights per pattern (from doc 03, Section 3)
-├── docs/                         # documents 01-04 + README
+├── docs/                         # official documentation and sprint plans
 ├── src/
 │   ├── schemas.py                # Pydantic state models (shared, do not fork)
 │   ├── llm_client.py             # LiteLLM wrapper + mock client
