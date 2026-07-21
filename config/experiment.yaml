@@ -7,10 +7,10 @@ pattern4_num_agents: 3               # locked in doc 02, Section 4.3; do not cha
 pattern4_agent_seeds: [1234, 5678, 9012]   # one seed per symmetric agent
 pattern4_context_ceiling_tokens: 8000       # doc 02, Section 4.2; tuned in Phase 2
 samples_per_dataset:                 # set during Phase 1
-  popqa: null
-  livebench: null
-  finqa: null
-  ifeval: null
+  popqa: 100
+  livebench: 100
+  finqa: 100
+  ifeval: 100
 pipeline_max_revisions: 2          # Pattern 2 revision-loop cap; Doc 01 Section 3
 pattern3_max_iterations: 3         # 3 reasoning artifacts (1 draft + 2 revisions) = 5 LLM calls per query
 pattern4_max_iterations: 2         # Pattern 4 max refinement rounds
