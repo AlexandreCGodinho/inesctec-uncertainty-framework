@@ -4,6 +4,8 @@ from pathlib import Path
 
 from .finqa_scorer import FinQAScorer
 from .livebench_scorer import LiveBenchScorer
+from .popqa_scorer import PopqaScorer
+from .ifeval_scorer import IfevalScorer
 
 def main():
     parser = argparse.ArgumentParser(description="Score JSONL telemetry outputs using official harnesses.")
@@ -37,6 +39,10 @@ def main():
         scorer = FinQAScorer()
     elif args.dataset == "livebench":
         scorer = LiveBenchScorer()
+    elif args.dataset == "popqa":
+        scorer = PopqaScorer()
+    elif args.dataset == "ifeval":
+        scorer = IfevalScorer()
     else:
         raise NotImplementedError(f"Scorer for {args.dataset} is assigned to another team member or not implemented yet.")
         

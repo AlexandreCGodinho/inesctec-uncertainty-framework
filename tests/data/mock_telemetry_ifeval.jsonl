@@ -1,0 +1,2 @@
+{"run_id": "i1_gw", "pattern": 1, "query_id": "i1", "seed": 42, "final_answer": "Hello World!!"}
+{"run_id": "i2_gw", "pattern": 1, "query_id": "i2", "seed": 42, "final_answer": "Hi"}

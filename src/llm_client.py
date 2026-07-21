@@ -63,7 +63,8 @@ class LLMClient:
         if not raw_model.startswith(prefix):
             raw_model = prefix + raw_model
         self.model = raw_model
-        
+        self.model_name = cfg["model_id"]
+        self.provider = cfg.get("inference_provider", "openai")
         self.seed = cfg["base_seed"] if seed is None else seed
         self._timeout = cfg.get("request_timeout_seconds", 60)
         self._completion = None
@@ -150,6 +151,8 @@ class LLMClient:
 class MockLLMClient(LLMClient):
     def __init__(self):
         self.seed = 0
+        self.model_name = "mock"
+        self.provider = "mock"
 
     def call(self, agent_role, prompt, round_index=0, want_logprobs=False,
              timeout_seconds=None):

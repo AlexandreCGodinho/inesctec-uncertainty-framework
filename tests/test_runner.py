@@ -145,6 +145,8 @@ class TestWriteTelemetryJsonl:
             u_L=0.0, u_F=0.0, u_P=0.0,
             U_surface=0.0, U_composite=0.0,
             query_id="q1", seed=42,
+            model_name="test-model",
+            provider="test-provider",
             final_answer="test answer",
             termination_reason="completed",
             tokens_prompt=10, tokens_completion=5,
@@ -159,6 +161,8 @@ class TestWriteTelemetryJsonl:
         assert obj["u_L"] == 0.0
         assert obj["query_id"] == "q1"
         assert obj["seed"] == 42
+        assert obj["model_name"] == "test-model"
+        assert obj["provider"] == "test-provider"
         assert obj["final_answer"] == "test answer"
         assert obj["termination_reason"] == "completed"
         assert obj["tokens_prompt"] == 10
