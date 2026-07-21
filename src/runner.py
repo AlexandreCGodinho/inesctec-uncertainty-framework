@@ -70,11 +70,29 @@ def load_dataset_queries(
       ``inspect_evals`` or the livebench API.
     """
     if dataset_name == "livebench":
-        logger.warning(
-            "livebench has no direct datasets.load_dataset handle (Doc 02 Table 3). "
-            "Skipping — implement via inspect_evals or livebench API before Phase 3."
-        )
-        return []
+        import livebench.common as lb
+        # Use the official LiveBench utility to fetch and parse the dataset.
+        categories, _ = lb.get_categories_tasks()
+        queries = []
+        for cat_name, cat_dataset in categories.items():
+            # load_questions filters by release date correctly per the official harness
+            questions = lb.load_questions(cat_dataset, livebench_releases=lb.LIVE_BENCH_RELEASES, task_name=None)
+            for q in questions:
+                # LiveBench schema structure
+                qid = str(q.get("question_id", ""))
+                turns = q.get("turns", [])
+                query_text = str(turns[0]) if isinstance(turns, list) and len(turns) > 0 else str(q.get("question", ""))
+                ref = str(q.get("ground_truth", q.get("answer", "")))
+                
+                queries.append({
+                    "query_id": qid,
+                    "query": query_text,
+                    "reference": ref,
+                })
+        
+        if sample_size is not None:
+            queries = queries[:sample_size]
+        return queries
 
     import datasets as hf_datasets  # type: ignore[import-untyped]
 
@@ -186,6 +204,10 @@ def run_pilot(
     *config* — full ``experiment.yaml`` contents as a dict.
     *output_dir* — where JSONL files are written (default ``"telemetry"``).
     """
+    manifest_data = {
+        "runs": {}
+    }
+
     for dataset_name in datasets:
         try:
             sample_size = _resolve_sample_size(config, dataset_name)
@@ -198,16 +220,18 @@ def run_pilot(
             dataset_name, sample_size, config.get("base_seed", 1234)
         )
         if not queries:
-            logger.info("No queries for dataset '%s' — skipping", dataset_name)
-            continue
+            raise ValueError(f"Dataset '{dataset_name}' returned 0 records. Fail-fast rule triggered.")
 
         logger.info(
             "Processing %d queries for dataset '%s' across %d pattern(s)",
             len(queries), dataset_name, len(patterns),
         )
 
-        for query_data in queries:
-            for pattern_id, orchestrator_cls in patterns:
+        for pattern_id, orchestrator_cls in patterns:
+            expected_count = len(queries)
+            actual_count = 0
+
+            for query_data in queries:
                 try:
                     state = RunState(
                         run_id=f"{query_data['query_id']}_{pattern_id.name}",
@@ -222,6 +246,7 @@ def run_pilot(
                     state = orchestrator.run(state)
                     telemetry = build_telemetry(state)
                     write_telemetry_jsonl(telemetry, dataset_name, output_dir)
+                    actual_count += 1
                 except Exception:
                     logger.exception(
                         "Failed run: dataset=%s pattern=%s query=%s",
@@ -229,6 +254,21 @@ def run_pilot(
                         pattern_id.name,
                         query_data["query_id"],
                     )
+            
+            # Record manifest entries
+            manifest_key = f"{dataset_name}_pattern{pattern_id.value}"
+            manifest_data["runs"][manifest_key] = {
+                "expected": expected_count,
+                "actual": actual_count
+            }
+
+    # Write End-of-run manifest
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    manifest_path = out / "manifest.json"
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(manifest_data, f, indent=2)
+    logger.info("End-of-run manifest written to %s", manifest_path)
 
 
 if __name__ == "__main__":

@@ -50,8 +50,8 @@ class TestLoadDatasetQueries:
 
         data = [{"id": "p1", "question": "What is AI?", "answer": "AI is..."}]
 
-        def mock_load(name, split, trust_remote_code=False):
-            return _fake_hf_dataset(data)
+        def mock_load(*args, **kwargs):
+            return {"train": _fake_hf_dataset(data)}
 
         monkeypatch.setattr(hf_datasets, "load_dataset", mock_load)
 
@@ -69,8 +69,8 @@ class TestLoadDatasetQueries:
             {"id": "p2", "question": "Q2?", "answer": "A2"},
         ]
 
-        def mock_load(name, split, trust_remote_code=False):
-            return _fake_hf_dataset(data)
+        def mock_load(*args, **kwargs):
+            return {"train": _fake_hf_dataset(data)}
 
         monkeypatch.setattr(hf_datasets, "load_dataset", mock_load)
 
@@ -80,12 +80,7 @@ class TestLoadDatasetQueries:
         assert len(queries) == 2
         assert "No sample_size limit" in caplog.text
 
-    def test_livebench_returns_empty(self, caplog):
-        with caplog.at_level(logging.WARNING):
-            queries = load_dataset_queries("livebench", sample_size=None)
-
-        assert queries == []
-        assert "livebench" in caplog.text
+    # test_livebench_returns_empty removed because it's no longer skippedvebench" in caplog.text
 
     def test_unknown_dataset_raises(self):
         with pytest.raises(ValueError, match="Unknown dataset"):
@@ -99,8 +94,8 @@ class TestLoadDatasetQueries:
             "not_a_dict",  # malformed
         ]
 
-        def mock_load(name, split, trust_remote_code=False):
-            return _fake_hf_dataset(data)
+        def mock_load(*args, **kwargs):
+            return {"train": _fake_hf_dataset(data)}
 
         monkeypatch.setattr(hf_datasets, "load_dataset", mock_load)
 
@@ -263,18 +258,7 @@ class TestRunPilot:
                 assert telemetry.tokens_completion >= 0
                 assert telemetry.latency_ms >= 0
 
-    def test_no_query_skips_gracefully(self, monkeypatch, tmp_path):
-        monkeypatch.setattr(
-            "src.runner.load_dataset_queries",
-            lambda name, size, seed=None, **kw: [],
-        )
-
-        config = {"samples_per_dataset": {"empty": 5}, "base_seed": 1234}
-        patterns = [(PatternID.GOVERNED_WORKFLOW, GovernedWorkflow)]
-
-        run_pilot(["empty"], patterns, MockLLMClient(), config, output_dir=str(tmp_path))
-
-        assert not list(tmp_path.iterdir())
+    # test_no_query_skips_gracefully removed because empty query now triggers fail-fast
 
     def test_missing_dataset_in_config_raises_and_is_logged(self, monkeypatch, tmp_path, caplog):
         def mock_load(name, size, seed=None, **kw):
@@ -289,7 +273,9 @@ class TestRunPilot:
             run_pilot(["missing"], patterns, MockLLMClient(), config, output_dir=str(tmp_path))
 
         assert "not listed in samples_per_dataset" in caplog.text
-        assert not list(tmp_path.iterdir())
+        # Iterdir will contain manifest.json
+        files = [p.name for p in tmp_path.iterdir()]
+        assert files == ["manifest.json"]
 
     def test_null_sample_size_raises_and_is_logged(self, monkeypatch, tmp_path, caplog):
         def mock_load(name, size, seed=None, **kw):
@@ -304,7 +290,8 @@ class TestRunPilot:
             run_pilot(["popqa"], patterns, MockLLMClient(), config, output_dir=str(tmp_path))
 
         assert "is null in experiment.yaml" in caplog.text
-        assert not list(tmp_path.iterdir())
+        files = [p.name for p in tmp_path.iterdir()]
+        assert files == ["manifest.json"]
 
     def test_configured_dataset_still_works(self, monkeypatch, tmp_path):
         def mock_load(name, size, seed=None, **kw):
@@ -359,3 +346,44 @@ class TestResilience:
 
         lines = (tmp_path / "test_pattern1.jsonl").read_text().strip().split("\n")
         assert len(lines) == 2
+
+
+class TestTaskB1Requirements:
+    def test_run_pilot_fail_fast_on_empty_dataset(self, tmp_path, monkeypatch):
+        # Mock load_dataset_queries to return empty list
+        monkeypatch.setattr(
+            "src.runner.load_dataset_queries",
+            lambda name, size, seed=None, **kw: [],
+        )
+
+        config = {"samples_per_dataset": {"empty_dataset": 3}, "base_seed": 1234}
+        patterns = [(PatternID.GOVERNED_WORKFLOW, GovernedWorkflow)]
+
+        # Should raise ValueError for fail-fast
+        with pytest.raises(ValueError, match="returned 0 records. Fail-fast rule triggered."):
+            run_pilot(["empty_dataset"], patterns, MockLLMClient(), config, output_dir=str(tmp_path))
+
+    def test_run_pilot_generates_manifest(self, synthetic_queries, tmp_path, monkeypatch):
+        monkeypatch.setattr(
+            "src.runner.load_dataset_queries",
+            lambda name, size, seed=None, **kw: synthetic_queries,
+        )
+
+        config = {"samples_per_dataset": {"test_manifest": 3}, "base_seed": 1234}
+        patterns = [(PatternID.GOVERNED_WORKFLOW, GovernedWorkflow)]
+        
+        run_pilot(["test_manifest"], patterns, MockLLMClient(), config, output_dir=str(tmp_path))
+        
+        manifest_path = tmp_path / "manifest.json"
+        assert manifest_path.exists()
+        
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest_data = json.load(f)
+            
+        assert "runs" in manifest_data
+        run_key = "test_manifest_pattern1"
+        assert run_key in manifest_data["runs"]
+        
+        # synthetic_queries has 3 items
+        assert manifest_data["runs"][run_key]["expected"] == 3
+        assert manifest_data["runs"][run_key]["actual"] == 3
