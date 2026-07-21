@@ -28,7 +28,8 @@ pip install -q \
     "litellm>=1.40" \
     "sentence-transformers>=3.0" \
     "datasets>=2.19" \
-    "pandas" "numpy" "pyyaml" "tqdm"
+    "pandas" "numpy" "pyyaml" "tqdm" \
+    "git+https://github.com/LiveBench/LiveBench.git@4bf3d6f4cb37fa8dc3967dd1b124fef5d4099635"
 ```
 
 For local (non-GPU) development, omit `vllm` and use the mock client (Section 4.3).
@@ -82,6 +83,7 @@ agentic-eval/
 │   │   └── p4_deliberation.py    # Intern 2
 │   └── runner.py                 # dataset loop, telemetry writer
 ├── notebooks/                    # Colab entry points only (thin wrappers)
+├── scripts/                      # data processing and utility scripts
 └── telemetry/                    # JSONL outputs, one file per run (gitignored)
 ```
 
