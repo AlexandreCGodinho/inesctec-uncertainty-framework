@@ -35,6 +35,8 @@ class RunState(BaseModel):
     reference: str                        # ground truth / reference context
     calls: list[LLMCall] = Field(default_factory=list)
     seed: int = 0
+    model_name: str = ""
+    provider: str = ""
     final_answer: str | None = None
     started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -62,3 +64,5 @@ class Telemetry(BaseModel):
     tokens_prompt: int = 0
     tokens_completion: int = 0
     latency_ms: float = 0.0
+    model_name: str = ""
+    provider: str = ""

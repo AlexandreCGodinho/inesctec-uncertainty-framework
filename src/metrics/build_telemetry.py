@@ -148,6 +148,8 @@ def build_telemetry(state: RunState) -> Telemetry:
         pattern=state.pattern,
         query_id=state.query_id,
         seed=state.seed,
+        model_name=state.model_name,
+        provider=state.provider,
         final_answer=state.final_answer,
         termination_reason=termination_reason,
         tokens_prompt=sum(c.tokens_prompt for c in state.calls),
