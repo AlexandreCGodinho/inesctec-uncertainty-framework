@@ -76,6 +76,7 @@ agentic-eval/
 │   ├── schemas.py                # Pydantic state models (shared, do not fork)
 │   ├── llm_client.py             # LiteLLM wrapper + mock client
 │   ├── metrics/                  # one module per u_k, coded against doc 03
+│   ├── scoring/                  # dataset ground-truth scorers
 │   ├── patterns/
 │   │   ├── p1_governed.py        # Intern 1
 │   │   ├── p2_role_pipeline.py   # Intern 1
