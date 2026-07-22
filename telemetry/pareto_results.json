@@ -1,0 +1,134 @@
+{
+  "ifeval": [
+    {
+      "pattern": 1,
+      "cost_metric": "tokens_completion",
+      "accuracy": 0.5,
+      "cost": 20.0,
+      "n_items": 6,
+      "pareto_optimal": true
+    },
+    {
+      "pattern": 2,
+      "cost_metric": "tokens_completion",
+      "accuracy": 0.5,
+      "cost": 20.0,
+      "n_items": 6,
+      "pareto_optimal": true
+    },
+    {
+      "pattern": 3,
+      "cost_metric": "tokens_completion",
+      "accuracy": 0.5,
+      "cost": 20.0,
+      "n_items": 6,
+      "pareto_optimal": true
+    },
+    {
+      "pattern": 4,
+      "cost_metric": "tokens_completion",
+      "accuracy": 0.5,
+      "cost": 20.0,
+      "n_items": 6,
+      "pareto_optimal": true
+    },
+    {
+      "pattern": 1,
+      "cost_metric": "latency_ms",
+      "accuracy": 0.5,
+      "cost": 1500.0,
+      "n_items": 6,
+      "pareto_optimal": true
+    },
+    {
+      "pattern": 2,
+      "cost_metric": "latency_ms",
+      "accuracy": 0.5,
+      "cost": 1500.0,
+      "n_items": 6,
+      "pareto_optimal": true
+    },
+    {
+      "pattern": 3,
+      "cost_metric": "latency_ms",
+      "accuracy": 0.5,
+      "cost": 1500.0,
+      "n_items": 6,
+      "pareto_optimal": true
+    },
+    {
+      "pattern": 4,
+      "cost_metric": "latency_ms",
+      "accuracy": 0.5,
+      "cost": 1500.0,
+      "n_items": 6,
+      "pareto_optimal": true
+    }
+  ],
+  "popqa": [
+    {
+      "pattern": 1,
+      "cost_metric": "tokens_completion",
+      "accuracy": 0.875,
+      "cost": 20.0,
+      "n_items": 8,
+      "pareto_optimal": true
+    },
+    {
+      "pattern": 2,
+      "cost_metric": "tokens_completion",
+      "accuracy": 0.875,
+      "cost": 20.0,
+      "n_items": 8,
+      "pareto_optimal": true
+    },
+    {
+      "pattern": 3,
+      "cost_metric": "tokens_completion",
+      "accuracy": 0.875,
+      "cost": 20.0,
+      "n_items": 8,
+      "pareto_optimal": true
+    },
+    {
+      "pattern": 4,
+      "cost_metric": "tokens_completion",
+      "accuracy": 0.875,
+      "cost": 20.0,
+      "n_items": 8,
+      "pareto_optimal": true
+    },
+    {
+      "pattern": 1,
+      "cost_metric": "latency_ms",
+      "accuracy": 0.875,
+      "cost": 1500.0,
+      "n_items": 8,
+      "pareto_optimal": true
+    },
+    {
+      "pattern": 2,
+      "cost_metric": "latency_ms",
+      "accuracy": 0.875,
+      "cost": 1500.0,
+      "n_items": 8,
+      "pareto_optimal": true
+    },
+    {
+      "pattern": 3,
+      "cost_metric": "latency_ms",
+      "accuracy": 0.875,
+      "cost": 1500.0,
+      "n_items": 8,
+      "pareto_optimal": true
+    },
+    {
+      "pattern": 4,
+      "cost_metric": "latency_ms",
+      "accuracy": 0.875,
+      "cost": 1500.0,
+      "n_items": 8,
+      "pareto_optimal": true
+    }
+  ]
+}

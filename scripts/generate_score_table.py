@@ -63,6 +63,8 @@ def main():
                     "U_composite": record.get("U_composite"),
                     "truncation_flag": record.get("truncation_flag", False),
                     "final_answer": record.get("final_answer", ""),
+                    "model_name": record.get("model_name", ""),
+                    "provider": record.get("provider", ""),
                 })
 
     # 2. Read scored telemetry

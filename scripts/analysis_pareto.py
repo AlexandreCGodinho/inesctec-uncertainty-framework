@@ -36,6 +36,7 @@ def plot_pareto(
     cost_col: str,
     cost_label: str,
     ax: plt.Axes,
+    dev_label: str = "",
 ) -> None:
     sub = df.groupby("pattern").agg(
         accuracy=("headline_bin", "mean"),
@@ -77,7 +78,7 @@ def plot_pareto(
 
     ax.set_xlabel(cost_label)
     ax.set_ylabel("Accuracy (%)")
-    ax.set_title(f"Pareto Frontier — {dataset} ({cost_label})")
+    ax.set_title(f"Pareto Frontier — {dataset} ({cost_label}){dev_label}")
     ax.legend(fontsize=7)
     ax.grid(True, alpha=0.3)
 
@@ -86,7 +87,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Pareto Frontier analysis.")
     parser.add_argument("--input", type=str, required=True, help="Path to per_item_scores.csv")
     parser.add_argument("--output-dir", type=str, default="telemetry", help="Output directory")
+    parser.add_argument("--dev", action="store_true", help="Add '(DEV ONLY)' label to plot titles")
     args = parser.parse_args()
+    dev_label = " (DEV ONLY)" if args.dev else ""
 
     df = pd.read_csv(args.input)
     df = df.dropna(subset=["headline_bin"]).copy()
@@ -135,7 +138,7 @@ def main() -> None:
         # Plots
         fig, axes = plt.subplots(1, 2, figsize=(12, 5))
         for ax_idx, (cost_col, cost_label) in enumerate(cost_configs):
-            plot_pareto(ds_df, dataset, cost_col, cost_label, axes[ax_idx])
+            plot_pareto(ds_df, dataset, cost_col, cost_label, axes[ax_idx], dev_label)
         plt.tight_layout()
         fig.savefig(plots_dir / f"pareto_{dataset}.png", dpi=150)
         plt.close(fig)

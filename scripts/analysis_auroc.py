@@ -42,7 +42,7 @@ def compute_auroc(df: pd.DataFrame, score_col: str, label_col: str = "headline_b
     return float(roc_auc_score(y_true, valid[score_col].astype(float)))
 
 
-def plot_roc_curve(df: pd.DataFrame, dataset: str, score_col: str, label_col: str, ax: plt.Axes) -> None:
+def plot_roc_curve(df: pd.DataFrame, dataset: str, score_col: str, label_col: str, ax: plt.Axes, dev_label: str = "") -> None:
     patterns = sorted(df["pattern"].unique())
     for p in patterns:
         sub = df[df["pattern"] == p].dropna(subset=[score_col, label_col])
@@ -56,7 +56,7 @@ def plot_roc_curve(df: pd.DataFrame, dataset: str, score_col: str, label_col: st
     ax.plot([0, 1], [0, 1], "k--", alpha=0.3)
     ax.set_xlabel("False Positive Rate")
     ax.set_ylabel("True Positive Rate")
-    ax.set_title(f"ROC — {dataset}")
+    ax.set_title(f"ROC — {dataset}{dev_label}")
     ax.legend(loc="lower right")
     ax.set_aspect("equal")
 
@@ -79,7 +79,7 @@ def compute_risk_coverage(df: pd.DataFrame, score_col: str, label_col: str = "he
     return pd.DataFrame(results)
 
 
-def plot_risk_coverage(df: pd.DataFrame, dataset: str, score_col: str, ax: plt.Axes) -> None:
+def plot_risk_coverage(df: pd.DataFrame, dataset: str, score_col: str, ax: plt.Axes, dev_label: str = "") -> None:
     patterns = sorted(df["pattern"].unique())
     for p in patterns:
         sub = df[df["pattern"] == p]
@@ -89,7 +89,7 @@ def plot_risk_coverage(df: pd.DataFrame, dataset: str, score_col: str, ax: plt.A
         ax.plot(rc["coverage"] * 100, rc["accuracy"] * 100, marker=".", label=f"P{p}")
     ax.set_xlabel("Coverage (%)")
     ax.set_ylabel("Accuracy (%)")
-    ax.set_title(f"Risk-Coverage — {dataset}")
+    ax.set_title(f"Risk-Coverage — {dataset}{dev_label}")
     ax.legend(loc="lower left")
     ax.set_xlim(105, 0)
     ax.grid(True, alpha=0.3)
@@ -99,7 +99,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="AUROC & Risk-Coverage analysis.")
     parser.add_argument("--input", type=str, required=True, help="Path to per_item_scores.csv")
     parser.add_argument("--output-dir", type=str, default="telemetry", help="Output directory for results and plots")
+    parser.add_argument("--dev", action="store_true", help="Add '(DEV ONLY)' label to plot titles")
     args = parser.parse_args()
+    dev_label = " (DEV ONLY)" if args.dev else ""
 
     df = pd.read_csv(args.input)
     output_dir = Path(args.output_dir)
@@ -140,8 +142,8 @@ def main() -> None:
         # ROC curves per dataset
         fig, axes = plt.subplots(1, 3, figsize=(15, 5))
         for ax_idx, col in enumerate(score_cols):
-            plot_roc_curve(ds_df, dataset, col, "headline_bin", axes[ax_idx])
-            axes[ax_idx].set_title(f"ROC ({col}) — {dataset}")
+            plot_roc_curve(ds_df, dataset, col, "headline_bin", axes[ax_idx], dev_label)
+            axes[ax_idx].set_title(f"ROC ({col}) — {dataset}{dev_label}")
         plt.tight_layout()
         fig.savefig(plots_dir / f"auroc_{dataset}.png", dpi=150)
         plt.close(fig)
@@ -149,8 +151,8 @@ def main() -> None:
         # Risk-Coverage per dataset
         fig, axes = plt.subplots(1, 3, figsize=(15, 5))
         for ax_idx, col in enumerate(score_cols):
-            plot_risk_coverage(ds_df, dataset, col, axes[ax_idx])
-            axes[ax_idx].set_title(f"Risk-Coverage ({col}) — {dataset}")
+            plot_risk_coverage(ds_df, dataset, col, axes[ax_idx], dev_label)
+            axes[ax_idx].set_title(f"Risk-Coverage ({col}) — {dataset}{dev_label}")
         plt.tight_layout()
         fig.savefig(plots_dir / f"risk_coverage_{dataset}.png", dpi=150)
         plt.close(fig)
