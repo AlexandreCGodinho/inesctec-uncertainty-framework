@@ -42,18 +42,29 @@ def main():
                 seed = str(record.get("seed", ""))
                 key = (q_id, pattern, seed)
                 
-                # We need to know which dataset it is from the filename or record
-                # Try to infer dataset from filename if not explicitly present in a standard way
-                dataset_inferred = raw_file.stem.split("_")[0] 
+                # Use dataset from record if available, otherwise infer from filename
+                dataset_val = record.get("dataset", "") or raw_file.stem.split("_")[0]
                 
                 merged_data[key].update({
                     "query_id": q_id,
                     "pattern": pattern,
                     "seed": seed,
-                    "dataset": dataset_inferred,
+                    "dataset": dataset_val,
                     "termination_reason": record.get("termination_reason", ""),
+                    "tokens_prompt": record.get("tokens_prompt", 0),
                     "tokens_completion": record.get("tokens_completion", 0),
                     "latency_ms": record.get("latency_ms", 0.0),
+                    "u_L": record.get("u_L"),
+                    "u_F": record.get("u_F"),
+                    "u_C": record.get("u_C"),
+                    "u_R": record.get("u_R"),
+                    "u_P": record.get("u_P"),
+                    "U_surface": record.get("U_surface"),
+                    "U_composite": record.get("U_composite"),
+                    "truncation_flag": record.get("truncation_flag", False),
+                    "final_answer": record.get("final_answer", ""),
+                    "model_name": record.get("model_name", ""),
+                    "provider": record.get("provider", ""),
                 })
 
     # 2. Read scored telemetry
@@ -85,10 +96,8 @@ def main():
         elif dataset == "finqa":
             return str(int(record.get("execution_accuracy", 0)))
         elif dataset == "ifeval":
-            # Using prompt-level strict as headline per spec
             return str(int(record.get("strict_prompt", 0)))
         elif dataset == "livebench":
-            # LiveBench has no natural binary, we leave it blank in headline_bin
             return ""
         return ""
 
