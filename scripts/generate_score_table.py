@@ -81,12 +81,12 @@ def main():
             
         dataset = dataset.lower()
         if dataset == "popqa":
-            return str(int(record.get("alias_match", 0)))
+            return str(int(record.get("match", 0)))
         elif dataset == "finqa":
             return str(int(record.get("execution_accuracy", 0)))
         elif dataset == "ifeval":
             # Using prompt-level strict as headline per spec
-            return str(int(record.get("prompt_level_strict", 0)))
+            return str(int(record.get("strict_prompt", 0)))
         elif dataset == "livebench":
             # LiveBench has no natural binary, we leave it blank in headline_bin
             return ""
