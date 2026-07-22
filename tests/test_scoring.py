@@ -67,3 +67,61 @@ def test_livebench_scoring(monkeypatch):
     # l2: "true" does not match "False."
     l2 = next(r for r in results if r["query_id"] == "l2")
     assert l2["scores"]["accuracy"] == 0.0
+
+def test_popqa_scoring(monkeypatch):
+    test_dir = Path("tests/data")
+    telemetry_path = test_dir / "mock_telemetry_popqa.jsonl"
+    reference_path = test_dir / "mock_references_popqa.jsonl"
+
+    with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as out_file:
+        out_path = out_file.name
+
+    args = ["score_telemetry.py", "--input", str(telemetry_path), "--output", out_path, "--dataset", "popqa", "--reference", str(reference_path)]
+    monkeypatch.setattr("sys.argv", args)
+
+    main()
+
+    with open(out_path, "r") as f:
+        lines = f.readlines()
+
+    assert len(lines) == 2
+
+    results = [json.loads(line) for line in lines]
+
+    # p1: "Paris" matches reference "Paris"
+    p1 = next(r for r in results if r["query_id"] == "p1")
+    assert p1["scores"]["match"] == 1.0
+
+    # p2: "London" does not match reference "Paris"
+    p2 = next(r for r in results if r["query_id"] == "p2")
+    assert p2["scores"]["match"] == 0.0
+
+def test_ifeval_scoring(monkeypatch):
+    test_dir = Path("tests/data")
+    telemetry_path = test_dir / "mock_telemetry_ifeval.jsonl"
+    reference_path = test_dir / "mock_references_ifeval.jsonl"
+
+    with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as out_file:
+        out_path = out_file.name
+
+    args = ["score_telemetry.py", "--input", str(telemetry_path), "--output", out_path, "--dataset", "ifeval", "--reference", str(reference_path)]
+    monkeypatch.setattr("sys.argv", args)
+
+    main()
+
+    with open(out_path, "r") as f:
+        lines = f.readlines()
+
+    assert len(lines) == 2
+
+    results = [json.loads(line) for line in lines]
+
+    # i1: "Hello World!!" (13 chars) passes min 10 characters
+    i1 = next(r for r in results if r["query_id"] == "i1")
+    assert i1["scores"]["strict_prompt"] == 1.0
+    assert i1["scores"]["loose_prompt"] == 1.0
+
+    # i2: "Hi" (2 chars) fails min 10 characters
+    i2 = next(r for r in results if r["query_id"] == "i2")
+    assert i2["scores"]["strict_prompt"] == 0.0
+    assert i2["scores"]["loose_prompt"] == 0.0

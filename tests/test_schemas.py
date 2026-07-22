@@ -37,6 +37,8 @@ def test_telemetry_defaults():
     assert t.tokens_prompt == 0
     assert t.tokens_completion == 0
     assert t.latency_ms == 0.0
+    assert t.model_name == ""
+    assert t.provider == ""
 
 
 def test_run_state_with_seed():

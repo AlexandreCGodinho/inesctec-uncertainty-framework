@@ -241,6 +241,8 @@ def run_pilot(
                         query=query_data["query"],
                         reference=query_data["reference"],
                         seed=client.seed,
+                        model_name=client.model_name,
+                        provider=client.provider,
                     )
                     orchestrator = orchestrator_cls(client)
                     state = orchestrator.run(state)
