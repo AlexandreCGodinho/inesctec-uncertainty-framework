@@ -1,3 +1,5 @@
+import json
+
 def compute_u_F(
     final_answer: str,
     reference: str,
@@ -8,16 +10,25 @@ def compute_u_F(
     claims = _split_claims(final_answer)
     if not claims:
         return 0.5
-    scores = []
-    weights = []
-    for claim in claims:
-        severity = _estimate_severity(claim)
-        s = _judge_claim(claim, reference, llm_judge_callable)
-        scores.append(s)
-        weights.append(severity)
+    
+    weights = [_estimate_severity(claim) for claim in claims]
     total_weight = sum(weights)
     if total_weight == 0:
         return 0.5
+
+    scores_dict = _judge_claims_batch(claims, reference, llm_judge_callable)
+    
+    scores = []
+    for i in range(len(claims)):
+        score = scores_dict.get(str(i), 0.0)
+        try:
+            score = float(score)
+            if score not in [-1, 0, 0.5, 1]:
+                score = 0.0
+        except (ValueError, TypeError):
+            score = 0.0
+        scores.append(score)
+
     mean_s = sum(w * s for w, s in zip(weights, scores)) / total_weight
     return (1.0 - mean_s) / 2.0
 
@@ -33,24 +44,31 @@ def _estimate_severity(claim: str) -> float:
     return 1.0 + 0.5 * count
 
 
-def _judge_claim(
-    claim: str, reference: str, llm_judge_callable
-) -> float:
+def _judge_claims_batch(
+    claims: list[str], reference: str, llm_judge_callable
+) -> dict:
+    claims_text = "\n".join(f"{i}: {c}" for i, c in enumerate(claims))
     prompt = (
-        f"Claim: {claim}\n"
         f"Reference: {reference}\n\n"
-        f"Score the claim against the reference:\n"
+        f"Claims:\n{claims_text}\n\n"
+        f"Score each claim against the reference:\n"
         f"  -1 = contradicted\n"
         f"   0 = not enough information\n"
         f"  +0.5 = partially supported\n"
         f"  +1 = fully supported\n\n"
-        f"Score:"
+        f"You MUST return a valid JSON object mapping the claim index (as string) to its numeric score.\n"
+        f"Example: {{\"0\": 1, \"1\": -1, \"2\": 0.5}}\n\n"
+        f"JSON:"
     )
     response = llm_judge_callable("judge", prompt)
     try:
-        score = float(response.response_text.strip()[:4])
-        if score not in [-1, 0, 0.5, 1]:
-            return 0.0
-        return score
-    except (ValueError, TypeError):
-        return 0.0
+        raw = response.response_text.strip()
+        if raw.startswith("```json"):
+            raw = raw[7:]
+        if raw.startswith("```"):
+            raw = raw[3:]
+        if raw.endswith("```"):
+            raw = raw[:-3]
+        return json.loads(raw.strip())
+    except Exception:
+        return {}
