@@ -50,7 +50,7 @@ def test_livebench_scoring(monkeypatch):
         out_path = out_file.name
         
     # Mock CLI arguments for LiveBench
-    args = ["score_telemetry.py", "--input", str(telemetry_path), "--output", out_path, "--dataset", "livebench", "--reference", str(reference_path)]
+    args = ["score_telemetry.py", "--input", str(telemetry_path), "--output", out_path, "--dataset", "livebench", "--reference", str(reference_path), "--mock-mode"]
     monkeypatch.setattr("sys.argv", args)
     
     main()

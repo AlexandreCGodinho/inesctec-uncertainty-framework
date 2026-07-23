@@ -13,6 +13,7 @@ def main():
     parser.add_argument("--output", type=str, required=True, help="Path to output JSONL file with scores")
     parser.add_argument("--dataset", type=str, required=True, choices=["finqa", "livebench", "popqa", "ifeval"])
     parser.add_argument("--reference", type=str, required=True, help="Path to reference JSONL ground truths")
+    parser.add_argument("--mock-mode", action="store_true", help="Enable mock mode for testing (e.g. LiveBench ID fallback)")
     
     args = parser.parse_args()
     
@@ -38,7 +39,7 @@ def main():
     if args.dataset == "finqa":
         scorer = FinQAScorer()
     elif args.dataset == "livebench":
-        scorer = LiveBenchScorer()
+        scorer = LiveBenchScorer(mock_mode=args.mock_mode)
     elif args.dataset == "popqa":
         scorer = PopqaScorer()
     elif args.dataset == "ifeval":
