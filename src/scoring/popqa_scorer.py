@@ -6,14 +6,65 @@ from src.scoring.base import Scorer
 
 class PopqaScorer(Scorer):
     def score(self, record: dict, reference: dict) -> dict:
-        prediction = record.get("final_answer", "")
+        raw_prediction = record.get("final_answer", "")
         ref = reference.get("answer", reference.get("reference", ""))
-        result = {}
-        result["match"] = 1.0 if _is_alias_match(ref, prediction) else 0.0
-        result["match_jaccard_word"] = _jaccard_word_score(ref, prediction)
-        result["match_jaccard_bigram"] = _jaccard_bigram_score(ref, prediction)
-        result["match_acronym"] = _acronym_score(ref, prediction)
-        return result
+        extracted = _extract_answer(raw_prediction)
+        raw_scores = _compute_scores(ref, raw_prediction)
+        extracted_scores = _compute_scores(ref, extracted)
+        return {
+            "match": extracted_scores["match"],
+            "match_jaccard_word": extracted_scores["match_jaccard_word"],
+            "match_jaccard_bigram": extracted_scores["match_jaccard_bigram"],
+            "match_acronym": extracted_scores["match_acronym"],
+            "score_popqa_raw": raw_scores["match"],
+        }
+
+
+def _compute_scores(reference: str, prediction: str) -> dict:
+    return {
+        "match": 1.0 if _is_alias_match(reference, prediction) else 0.0,
+        "match_jaccard_word": _jaccard_word_score(reference, prediction),
+        "match_jaccard_bigram": _jaccard_bigram_score(reference, prediction),
+        "match_acronym": _acronym_score(reference, prediction),
+    }
+
+
+_NOISE_PATTERNS = [
+    r"^(verdict|critique|##)",
+    r"^[=\-*]{2,}$",
+    r"^(i hope|let me know|feel free|if you have|please|thank|you.re welcome)",
+]
+
+
+def _extract_answer(text: str) -> str:
+    if not text or not text.strip():
+        return text or ""
+    lines = text.strip().split("\n")
+
+    cleaned = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        is_noise = any(re.search(p, stripped, re.IGNORECASE) for p in _NOISE_PATTERNS)
+        if not is_noise:
+            cleaned.append(stripped)
+
+    if not cleaned:
+        return text
+
+    final_answer_lines = [l for l in cleaned if "final answer" in l.lower()]
+    if final_answer_lines:
+        last = final_answer_lines[-1]
+        _, _, after = last.partition(":")
+        if after.strip():
+            return after.strip()
+
+    for line in reversed(cleaned):
+        if re.search(r"[a-zA-Z0-9]", line):
+            return line
+
+    return text
 
 
 def _normalize(text: str) -> list[str]:
