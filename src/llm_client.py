@@ -119,9 +119,14 @@ class LLMClient:
         timeout = timeout_seconds if timeout_seconds is not None else self._timeout
         start = time.perf_counter()
 
+        cfg = _load_experiment_config()
+        role_limits = cfg.get("role_max_tokens", {})
+        max_tokens = role_limits.get(agent_role, 2048)
+
         r = self._call_with_retry(
             model=self.model, api_base=self.api_base, api_key=self.api_key,
             messages=[{"role": "user", "content": prompt}],
+            max_tokens=max_tokens,
             logprobs=want_logprobs, top_logprobs=5 if want_logprobs else None,
             temperature=0.7, seed=self.seed, timeout=timeout,
         )
