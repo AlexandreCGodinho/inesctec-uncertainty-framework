@@ -6,14 +6,53 @@ from src.scoring.base import Scorer
 
 class PopqaScorer(Scorer):
     def score(self, record: dict, reference: dict) -> dict:
-        prediction = record.get("final_answer", "")
+        prediction_raw = record.get("final_answer", "")
+        prediction_extracted = extract_answer_for_popqa(prediction_raw)
+        
         ref = reference.get("answer", reference.get("reference", ""))
         result = {}
-        result["match"] = 1.0 if _is_alias_match(ref, prediction) else 0.0
-        result["match_jaccard_word"] = _jaccard_word_score(ref, prediction)
-        result["match_jaccard_bigram"] = _jaccard_bigram_score(ref, prediction)
-        result["match_acronym"] = _acronym_score(ref, prediction)
+        
+        # New extraction-based headline metric
+        result["match"] = 1.0 if _is_alias_match(ref, prediction_extracted) else 0.0
+        
+        # Keep old metric as diagnostic column
+        result["score_popqa_raw"] = 1.0 if _is_alias_match(ref, prediction_raw) else 0.0
+        
+        # Diagnostic metrics (using extracted text for accuracy)
+        result["match_jaccard_word"] = _jaccard_word_score(ref, prediction_extracted)
+        result["match_jaccard_bigram"] = _jaccard_bigram_score(ref, prediction_extracted)
+        result["match_acronym"] = _acronym_score(ref, prediction_extracted)
         return result
+
+def extract_answer_for_popqa(raw: str) -> str:
+    if not raw:
+        return ""
+    
+    lines = raw.split("\n")
+    filtered_lines = []
+    
+    # 1. Remove noise lines
+    for line in lines:
+        s_line = line.strip()
+        # skip VERDICT:, CRITIQUE:, ## or punctuation-only
+        if s_line.startswith("VERDICT:") or s_line.startswith("CRITIQUE:") or s_line.startswith("##"):
+            continue
+        # Check if contains at least one letter or digit
+        if not any(char.isalnum() for char in s_line):
+            continue
+        filtered_lines.append(s_line)
+        
+    # 2. On FINAL ANSWER:, keep line content after colon (last one wins)
+    for i in range(len(filtered_lines) - 1, -1, -1):
+        if filtered_lines[i].startswith("FINAL ANSWER:"):
+            return filtered_lines[i].split(":", 1)[1].strip()
+            
+    # 3. Return the last remaining line that contains a letter or digit
+    if filtered_lines:
+        return filtered_lines[-1]
+        
+    # 4. If none, return raw unchanged
+    return raw
 
 
 def _normalize(text: str) -> list[str]:

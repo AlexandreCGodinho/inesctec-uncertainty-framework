@@ -59,7 +59,7 @@ class TestPopqaScorer:
     def test_all_keys_returned(self):
         result = self._score("Paris", "Paris")
         assert set(result.keys()) == {
-            "match", "match_jaccard_word", "match_jaccard_bigram", "match_acronym",
+            "match", "match_jaccard_word", "match_jaccard_bigram", "match_acronym", "score_popqa_raw"
         }
 
     def test_deterministic(self):
