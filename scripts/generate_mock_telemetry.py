@@ -45,60 +45,64 @@ MOCK_REFERENCES = {
     ],
 }
 
-out_dir = Path("telemetry")
-out_dir.mkdir(parents=True, exist_ok=True)
+def main():
+    out_dir = Path("telemetry")
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-for dataset, records in MOCK_DATA.items():
-    for pattern_id in [1, 2, 3, 4]:
-        filename = out_dir / f"{dataset}_pattern{pattern_id}.jsonl"
-        with open(filename, "w", encoding="utf-8") as f:
-            for rec in records:
-                base_u = rec["u"]
-                u_L_val = base_u * 0.5
-                u_F_val = base_u * 0.3
-                u_C_val = base_u if pattern_id == 4 else None
-                u_R_val = base_u * 0.2 if pattern_id != 1 else None
-                u_P_val = base_u * 0.2
-                U_surface = round((u_L_val + u_F_val + u_P_val) / 3, 4)
+    for dataset, records in MOCK_DATA.items():
+        for pattern_id in [1, 2, 3, 4]:
+            filename = out_dir / f"{dataset}_pattern{pattern_id}.jsonl"
+            with open(filename, "w", encoding="utf-8") as f:
+                for rec in records:
+                    base_u = rec["u"]
+                    u_L_val = base_u * 0.5
+                    u_F_val = base_u * 0.3
+                    u_C_val = base_u if pattern_id == 4 else None
+                    u_R_val = base_u * 0.2 if pattern_id != 1 else None
+                    u_P_val = base_u * 0.2
+                    U_surface = round((u_L_val + u_F_val + u_P_val) / 3, 4)
 
-                if pattern_id == 1:
-                    U_composite = round(0.33 * u_L_val + 0.33 * u_F_val + 0.34 * u_P_val, 4)
-                elif pattern_id in (2, 3):
-                    U_composite = round(0.25 * u_L_val + 0.25 * u_F_val + 0.25 * u_P_val + 0.25 * u_R_val, 4)
-                else:
-                    U_composite = round(0.20 * u_L_val + 0.20 * u_F_val + 0.20 * u_P_val + 0.20 * u_R_val + 0.20 * u_C_val, 4)
+                    if pattern_id == 1:
+                        U_composite = round(0.33 * u_L_val + 0.33 * u_F_val + 0.34 * u_P_val, 4)
+                    elif pattern_id in (2, 3):
+                        U_composite = round(0.25 * u_L_val + 0.25 * u_F_val + 0.25 * u_P_val + 0.25 * u_R_val, 4)
+                    else:
+                        U_composite = round(0.20 * u_L_val + 0.20 * u_F_val + 0.20 * u_P_val + 0.20 * u_R_val + 0.20 * u_C_val, 4)
 
-                telemetry = {
-                    "run_id": f"{rec['query_id']}_pattern{pattern_id}",
-                    "pattern": pattern_id,
-                    "query_id": rec["query_id"],
-                    "dataset": dataset,
-                    "seed": 1234,
-                    "model_name": "google/gemma-4-12b-it",
-                    "provider": "vllm",
-                    "final_answer": rec["final_answer"],
-                    "termination_reason": "completed",
-                    "tokens_prompt": 50,
-                    "tokens_completion": 20,
-                    "latency_ms": 1500.0,
-                    "u_L": u_L_val,
-                    "u_F": u_F_val,
-                    "u_C": u_C_val,
-                    "u_R": u_R_val,
-                    "u_P": u_P_val,
-                    "U_surface": U_surface,
-                    "U_composite": U_composite,
-                    "truncation_flag": False,
-                }
-                f.write(json.dumps(telemetry) + "\n")
-        print(f"Wrote {filename} ({len(records)} records)")
+                    telemetry = {
+                        "run_id": f"{rec['query_id']}_pattern{pattern_id}",
+                        "pattern": pattern_id,
+                        "query_id": rec["query_id"],
+                        "dataset": dataset,
+                        "seed": 1234,
+                        "model_name": "google/gemma-4-12b-it",
+                        "provider": "vllm",
+                        "final_answer": rec["final_answer"],
+                        "termination_reason": "completed",
+                        "tokens_prompt": 50,
+                        "tokens_completion": 20,
+                        "latency_ms": 1500.0,
+                        "u_L": u_L_val,
+                        "u_F": u_F_val,
+                        "u_C": u_C_val,
+                        "u_R": u_R_val,
+                        "u_P": u_P_val,
+                        "U_surface": U_surface,
+                        "U_composite": U_composite,
+                        "truncation_flag": False,
+                    }
+                    f.write(json.dumps(telemetry) + "\n")
+            print(f"Wrote {filename} ({len(records)} records)")
 
-# Write reference files
-ref_dir = Path("telemetry/references")
-ref_dir.mkdir(parents=True, exist_ok=True)
-for dataset, refs in MOCK_REFERENCES.items():
-    ref_path = ref_dir / f"{dataset}_references.jsonl"
-    with open(ref_path, "w", encoding="utf-8") as f:
-        for ref in refs:
-            f.write(json.dumps(ref) + "\n")
-    print(f"Wrote {ref_path}")
+    # Write reference files
+    ref_dir = Path("telemetry/references")
+    ref_dir.mkdir(parents=True, exist_ok=True)
+    for dataset, refs in MOCK_REFERENCES.items():
+        ref_path = ref_dir / f"{dataset}_references.jsonl"
+        with open(ref_path, "w", encoding="utf-8") as f:
+            for ref in refs:
+                f.write(json.dumps(ref) + "\n")
+        print(f"Wrote {ref_path}")
+
+if __name__ == "__main__":
+    main()

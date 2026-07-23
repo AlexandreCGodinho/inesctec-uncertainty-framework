@@ -28,10 +28,6 @@ def main():
 
     # 1. Read raw telemetry
     for raw_file in raw_dir.glob("*.jsonl"):
-        # Ignore manifest and scored files
-        if raw_file.name == "manifest.json" or raw_file.parent == scored_dir:
-            continue
-            
         with open(raw_file, "r", encoding="utf-8") as f:
             for line in f:
                 if not line.strip(): continue

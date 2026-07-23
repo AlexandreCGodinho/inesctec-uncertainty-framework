@@ -110,6 +110,7 @@ def main() -> None:
 
     # Drop rows with no headline
     df = df.dropna(subset=["headline_bin"]).copy()
+    df = df[df["headline_bin"] != ""].copy()
     df["headline_bin"] = df["headline_bin"].astype(int)
     df["refinement_triggered"] = df.apply(_refinement_triggered, axis=1)
 

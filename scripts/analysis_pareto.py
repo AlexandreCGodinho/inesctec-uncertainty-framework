@@ -93,6 +93,7 @@ def main() -> None:
 
     df = pd.read_csv(args.input)
     df = df.dropna(subset=["headline_bin"]).copy()
+    df = df[df["headline_bin"] != ""].copy()
     df["headline_bin"] = df["headline_bin"].astype(int)
     output_dir = Path(args.output_dir)
     plots_dir = output_dir / "plots"
