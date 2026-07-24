@@ -1,5 +1,8 @@
 import json
 
+class JudgeParseError(Exception):
+    pass
+
 def compute_u_F(
     final_answer: str,
     reference: str,
@@ -60,15 +63,18 @@ def _judge_claims_batch(
         f"Example: {{\"0\": 1, \"1\": -1, \"2\": 0.5}}\n\n"
         f"JSON:"
     )
-    response = llm_judge_callable("judge", prompt)
-    try:
-        raw = response.response_text.strip()
-        if raw.startswith("```json"):
-            raw = raw[7:]
-        if raw.startswith("```"):
-            raw = raw[3:]
-        if raw.endswith("```"):
-            raw = raw[:-3]
-        return json.loads(raw.strip())
-    except Exception:
-        return {}
+    for attempt in range(2):
+        response = llm_judge_callable("judge", prompt)
+        try:
+            raw = response.response_text.strip()
+            if raw.startswith("```json"):
+                raw = raw[7:]
+            if raw.startswith("```"):
+                raw = raw[3:]
+            if raw.endswith("```"):
+                raw = raw[:-3]
+            return json.loads(raw.strip())
+        except Exception:
+            if attempt == 1:
+                raise JudgeParseError("Failed to parse JSON after retry")
+    return {}
