@@ -57,6 +57,7 @@ class Telemetry(BaseModel):
     U_surface: float | None = None        # doc 03, Section 4.1
     U_composite: float | None = None      # doc 03, Section 3.2 weights
     truncation_flag: bool = False
+    judge_parse_error: bool = False
     query_id: str = ""
     dataset: str = ""                     # "popqa" | "livebench" | "finqa" | "ifeval"
     seed: int = 0

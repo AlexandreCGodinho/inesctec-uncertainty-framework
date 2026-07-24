@@ -2,7 +2,7 @@ import re
 
 from src.schemas import RunState, Telemetry, PatternID, LLMCall
 from src.metrics.u_L import compute_u_L
-from src.metrics.u_F import compute_u_F
+from src.metrics.u_F import compute_u_F, JudgeParseError
 from src.metrics.u_C import compute_u_C
 from src.metrics.u_R import compute_u_R
 from src.metrics.u_P import compute_u_P
@@ -101,7 +101,13 @@ def _extract_last_round_analyst_logprobs(state: RunState) -> list[list[float]]:
 
 def build_telemetry(state: RunState) -> Telemetry:
     u_L = compute_u_L(state.final_answer or "")
-    u_F = compute_u_F(state.final_answer or "", state.reference)
+    
+    judge_parse_error = False
+    try:
+        u_F = compute_u_F(state.final_answer or "", state.reference)
+    except JudgeParseError:
+        u_F = None
+        judge_parse_error = True
 
     pattern_id = state.pattern.value
 
@@ -164,4 +170,5 @@ def build_telemetry(state: RunState) -> Telemetry:
         U_surface=U_surface,
         U_composite=U_composite,
         truncation_flag=any(c.truncated for c in state.calls),
+        judge_parse_error=judge_parse_error,
     )
