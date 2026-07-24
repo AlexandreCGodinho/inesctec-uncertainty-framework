@@ -149,7 +149,7 @@ The following parameters are designated as **Design Constants**. None of these m
 1. **Base Model**: Gemma 4 12B IT (bfloat16)
 2. **Inference Provider**: vLLM
 3. **Hardware Envelope**: A100 (40 GB VRAM)
-4. **Datasets and Sampled Query IDs**: Provisionally fixed at 150 queries per dataset. (Budget math corrected: N=150 generates ~17,600 total calls considering P4x3 and u_F batching, totaling ~477 CUs, maintaining a safety margin against the 600 CUs limit).
+4. **Datasets and Sampled Query IDs**: **Provisional** N=150 queries per dataset (Pending confirmation from the A100 Smoke Run CU burn rate). (Budget math corrected: N=150 generates ~17,600 total calls considering P4x3 and u_F batching, totaling ~477 CUs, maintaining a safety margin against the 600 CUs limit).
 5. **Prompts after the freeze**
 6. **Iteration caps**
 7. **Ensemble Size**: K = 3
