@@ -12,7 +12,16 @@ def main():
     parser.add_argument("--output-transcript", type=str, default="telemetry/qualitative_coding_transcript.jsonl", help="Output transcript JSONL.")
     parser.add_argument("--output-labels", type=str, default="telemetry/qualitative_coding_labels.csv", help="Output label map CSV.")
     parser.add_argument("--seed", type=int, default=42, help="Fixed random seed for sampling.")
+    parser.add_argument("--dev", action="store_true", help="Run in dev mode, suffixing output with _DEV.")
     args = parser.parse_args()
+
+    if args.dev:
+        if not args.output_transcript.endswith("_DEV.jsonl"):
+            args.output_transcript = args.output_transcript.replace(".jsonl", "_DEV.jsonl")
+        if not args.output_labels.endswith("_DEV.csv"):
+            args.output_labels = args.output_labels.replace(".csv", "_DEV.csv")
+        if not args.score_table.endswith("_DEV.csv"):
+            args.score_table = args.score_table.replace(".csv", "_DEV.csv")
 
     random.seed(args.seed)
 

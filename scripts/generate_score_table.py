@@ -9,7 +9,13 @@ def main():
     parser.add_argument("--raw-telemetry-dir", type=str, default="telemetry", help="Directory with raw JSONL telemetry files.")
     parser.add_argument("--scored-telemetry-dir", type=str, default="telemetry/scored", help="Directory with scored JSONL files.")
     parser.add_argument("--output", type=str, default="telemetry/per_item_scores.csv", help="Path to output CSV.")
+    parser.add_argument("--dev", action="store_true", help="Run in dev mode, suffixing output with _DEV.")
     args = parser.parse_args()
+
+    out_path_str = args.output
+    if args.dev and not out_path_str.endswith("_DEV.csv"):
+        out_path_str = out_path_str.replace(".csv", "_DEV.csv")
+    args.output = out_path_str
 
     raw_dir = Path(args.raw_telemetry_dir)
     scored_dir = Path(args.scored_telemetry_dir)
@@ -103,7 +109,7 @@ def main():
         all_headers.update(record.keys())
         
     # Sort headers to have a predictable order
-    ordered_headers = ["query_id", "pattern", "seed", "dataset", "headline_bin", "termination_reason", "tokens_completion", "latency_ms"]
+    ordered_headers = ["query_id", "pattern", "seed", "dataset", "headline_bin", "termination_reason", "tokens_completion", "latency_ms", "score_popqa_raw"]
     remaining_headers = sorted(list(all_headers - set(ordered_headers)))
     final_headers = ordered_headers + remaining_headers
 
