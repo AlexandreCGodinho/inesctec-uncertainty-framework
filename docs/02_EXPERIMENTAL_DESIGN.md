@@ -156,6 +156,6 @@ The following parameters are designated as **Design Constants**. None of these m
 
 ## 8. Pilot Data Status
 
-The pilot of 18-19/07 is formally designated as the **development split (Llama 3.1 8B via Groq)**.
+The pilot of 18-19/07 is formally designated as the **development split (Llama 3.1 8B via Groq)**. The corresponding files are committed and tracked under the directory `data/dev_split_groq_llama31/`.
 Prompt tuning is allowed on pilot data only; the final report run uses prompts frozen at commit `<hash>` prior to launch, on a disjoint sampled query set.
 Prompt-engineering effort is equalized across patterns and documented here.
