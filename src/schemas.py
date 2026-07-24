@@ -58,6 +58,7 @@ class Telemetry(BaseModel):
     U_composite: float | None = None      # doc 03, Section 3.2 weights
     truncation_flag: bool = False
     query_id: str = ""
+    dataset: str = ""                     # "popqa" | "livebench" | "finqa" | "ifeval"
     seed: int = 0
     final_answer: str | None = None
     termination_reason: str | None = None

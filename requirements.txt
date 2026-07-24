@@ -10,3 +10,4 @@ pyyaml
 tqdm
 pytest
 livebench @ git+https://github.com/LiveBench/LiveBench.git@4bf3d6f4cb37fa8dc3967dd1b124fef5d4099635
+statsmodels>=0.14

@@ -1,9 +1,9 @@
 __pycache__/
 .pytest_cache/
 venv/
-telemetry/*.jsonl
-telemetry/*.csv
-telemetry/*.json
+telemetry/**/*.jsonl
+telemetry/**/*.csv
+telemetry/**/*.json
 telemetry/plots/
 prompt_self_review.md
 *.pyc
