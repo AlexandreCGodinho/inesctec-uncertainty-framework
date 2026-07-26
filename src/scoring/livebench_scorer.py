@@ -9,21 +9,21 @@ class LiveBenchScorer(Scorer):
     """
     def __init__(self, mock_mode: bool = False):
         self.mock_mode = mock_mode
+        self.questions_map = {}
         try:
             import livebench.common as lb
+            self.lb = lb
+            # Load all LiveBench questions into a dict for quick lookup
+            # This is necessary because telemetry only contains a subset of fields.
+            categories, _ = lb.get_categories_tasks(bench_name="live_bench/reasoning")
+            for cat_name, cat_dataset in categories.items():
+                # lb.load_questions filters by the default releases
+                questions = lb.load_questions(cat_dataset, livebench_releases=lb.LIVE_BENCH_RELEASES, task_name=None)
+                for q in questions:
+                    self.questions_map[str(q["question_id"])] = q
         except ImportError:
-            raise ImportError("LiveBench package is missing. Please run `pip install git+https://github.com/LiveBench/LiveBench.git@4bf3d6f4cb37fa8dc3967dd1b124fef5d4099635`.")
-
-        self.lb = lb
-        # Load all LiveBench questions into a dict for quick lookup
-        # This is necessary because telemetry only contains a subset of fields.
-        categories, _ = lb.get_categories_tasks("live_bench")
-        self.questions_map = {}
-        for cat_name, cat_dataset in categories.items():
-            # lb.load_questions filters by the default releases
-            questions = lb.load_questions(cat_dataset, livebench_releases=lb.LIVE_BENCH_RELEASES, task_name=None)
-            for q in questions:
-                self.questions_map[str(q["question_id"])] = q
+            if not self.mock_mode:
+                raise ImportError("LiveBench package is missing. Please run `pip install git+https://github.com/LiveBench/LiveBench.git@4bf3d6f4cb37fa8dc3967dd1b124fef5d4099635`.")
 
     def score(self, record: dict, reference: dict) -> dict:
         pred_ans_str = record.get("final_answer", "")
