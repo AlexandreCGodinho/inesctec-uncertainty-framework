@@ -108,16 +108,19 @@ def load_dataset_queries(
 
     try:
         if dataset_name == "finqa":
+            import urllib.request
             finqa_url = "https://raw.githubusercontent.com/czyssrs/FinQA/main/dataset/test.json"
-            ds_dict = hf_datasets.load_dataset("json", data_files={"test": finqa_url})
+            req = urllib.request.Request(finqa_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req) as resp:
+                hf_dataset = json.loads(resp.read().decode("utf-8"))
         else:
             ds_dict = hf_datasets.load_dataset(hf_id, trust_remote_code=True)
-        if "train" in ds_dict:
-            hf_dataset = ds_dict["train"]
-        elif "test" in ds_dict:
-            hf_dataset = ds_dict["test"]
-        else:
-            hf_dataset = ds_dict[list(ds_dict.keys())[0]]
+            if "train" in ds_dict:
+                hf_dataset = ds_dict["train"]
+            elif "test" in ds_dict:
+                hf_dataset = ds_dict["test"]
+            else:
+                hf_dataset = ds_dict[list(ds_dict.keys())[0]]
     except Exception as exc:
         raise RuntimeError(
             f"Failed to download dataset '{hf_id}'. "
