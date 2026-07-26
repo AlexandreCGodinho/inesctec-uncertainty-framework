@@ -127,7 +127,7 @@ class LLMClient:
             model=self.model, api_base=self.api_base, api_key=self.api_key,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=max_tokens,
-            logprobs=want_logprobs, top_logprobs=5 if want_logprobs else None,
+            logprobs=want_logprobs,
             temperature=0.7, seed=self.seed, timeout=timeout,
         )
 

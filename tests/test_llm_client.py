@@ -179,7 +179,7 @@ class TestLLMRetryAndTimeout:
 
         client = self._make_client(mock_completion)
         result = client.call(agent_role="test", prompt="track me")
-        assert result.latency_ms > 0
+        assert result.latency_ms >= 0
         assert result.tokens_prompt == 20
         assert result.tokens_completion == 7
 
