@@ -44,6 +44,7 @@ python -m vllm.entrypoints.openai.api_server \
     --model google/gemma-4-12b-it \
     --dtype bfloat16 \
     --max-logprobs 5 \
+    --gpu-memory-utilization 0.5 \
     --port 8000 &
 ```
 
