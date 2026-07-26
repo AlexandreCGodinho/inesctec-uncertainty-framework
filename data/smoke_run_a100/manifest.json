@@ -1,0 +1,68 @@
+{
+  "runs": {
+    "popqa_pattern1": {
+      "expected": 2,
+      "actual": 2
+    },
+    "popqa_pattern2": {
+      "expected": 2,
+      "actual": 2
+    },
+    "popqa_pattern3": {
+      "expected": 2,
+      "actual": 2
+    },
+    "popqa_pattern4": {
+      "expected": 2,
+      "actual": 2
+    },
+    "ifeval_pattern1": {
+      "expected": 2,
+      "actual": 2
+    },
+    "ifeval_pattern2": {
+      "expected": 2,
+      "actual": 2
+    },
+    "ifeval_pattern3": {
+      "expected": 2,
+      "actual": 2
+    },
+    "ifeval_pattern4": {
+      "expected": 2,
+      "actual": 2
+    },
+    "finqa_pattern1": {
+      "expected": 2,
+      "actual": 2
+    },
+    "finqa_pattern2": {
+      "expected": 2,
+      "actual": 2
+    },
+    "finqa_pattern3": {
+      "expected": 2,
+      "actual": 2
+    },
+    "finqa_pattern4": {
+      "expected": 2,
+      "actual": 2
+    },
+    "livebench_pattern1": {
+      "expected": 2,
+      "actual": 2
+    },
+    "livebench_pattern2": {
+      "expected": 2,
+      "actual": 2
+    },
+    "livebench_pattern3": {
+      "expected": 2,
+      "actual": 2
+    },
+    "livebench_pattern4": {
+      "expected": 2,
+      "actual": 2
+    }
+  }
+}
