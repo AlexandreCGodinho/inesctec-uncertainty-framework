@@ -72,7 +72,7 @@ def load_dataset_queries(
     if dataset_name == "livebench":
         import livebench.common as lb
         # Use the official LiveBench utility to fetch and parse the dataset.
-        categories, _ = lb.get_categories_tasks()
+        categories, _ = lb.get_categories_tasks(bench_name="live_bench/reasoning")
         queries = []
         for cat_name, cat_dataset in categories.items():
             # load_questions filters by release date correctly per the official harness
@@ -107,7 +107,11 @@ def load_dataset_queries(
     logger.info("Loading dataset %s (sample_size=%s)", hf_id, sample_size)
 
     try:
-        ds_dict = hf_datasets.load_dataset(hf_id, trust_remote_code=True)
+        if dataset_name == "finqa":
+            finqa_url = "https://raw.githubusercontent.com/czyssrs/FinQA/main/dataset/test.json"
+            ds_dict = hf_datasets.load_dataset("json", data_files={"test": finqa_url})
+        else:
+            ds_dict = hf_datasets.load_dataset(hf_id, trust_remote_code=True)
         if "train" in ds_dict:
             hf_dataset = ds_dict["train"]
         elif "test" in ds_dict:
@@ -134,8 +138,12 @@ def load_dataset_queries(
             ref_field = field_map.get("reference")
 
             qid = str(raw.get(qid_field, i))
-            query_text = str(raw.get(query_text_field, ""))
-            ref = str(raw[ref_field]) if ref_field and ref_field in raw else ""
+            if dataset_name == "finqa" and isinstance(raw.get("qa"), dict):
+                query_text = str(raw["qa"].get("question", ""))
+                ref = str(raw["qa"].get("answer", ""))
+            else:
+                query_text = str(raw.get(query_text_field, ""))
+                ref = str(raw[ref_field]) if ref_field and ref_field in raw else ""
 
             queries.append({
                 "query_id": qid,
