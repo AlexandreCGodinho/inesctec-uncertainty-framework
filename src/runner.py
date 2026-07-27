@@ -80,7 +80,9 @@ def load_dataset_queries(
                     try:
                         record = json.loads(line)
                         if "query_id" in record:
-                            excluded_ids.add(str(record["query_id"]))
+                            qid = str(record["query_id"])
+                            if qid.isdigit():
+                                excluded_ids.add(qid)
                     except Exception:
                         pass
 
