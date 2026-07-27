@@ -168,3 +168,19 @@ To correct this, the sampling protocol has been updated:
 1. **Seeded Uniform Sampling:** The first-N slice was replaced with uniform random sampling without replacement, using a local `random.Random(SAMPLING_SEED)` instance to guarantee determinism without relying on the global random state.
 2. **Configuration-driven Seed:** `SAMPLING_SEED` is defined exclusively in `experiment.yaml`, completely separated from the script logic.
 3. **Contamination Control:** All `query_ids` previously exposed during the Groq pilot (the dev split) are strictly filtered out and excluded from the pool before sampling occurs. This ensures the N=150 report run is a completely disjoint and virgin sample.
+
+## 10. Amendment 2 (27/07) - Conditional Prompt Framing
+
+A pre-launch audit of the Gemma PopQA telemetry from the A100 smoke run revealed a prompt-framing artifact. Because PopQA lacks reference passages (`context` is empty), Gemma strictly obeyed the constraint to "Base your answer strictly on the provided context" and output refusal artifacts across all four patterns (e.g., *"The provided context does not contain any information regarding John Mayne's occupation"*).
+
+To fix this without distorting datasets that do provide context (like FinQA), conditional prompt framing has been applied identically across all four orchestrator patterns:
+
+**Non-Empty Context (e.g., FinQA, LiveBench)**
+The original strict-grounding prompt remains unchanged. For example:
+> *"Using the context below, draft an answer to the question. Base your answer strictly on the provided context. Do not add external knowledge."*
+
+**Empty Context (e.g., PopQA, IFEval)**
+The strict constraint and the `CONTEXT:` block are removed, replaced exactly by:
+> *"Answer the request below using your own knowledge."*
+
+This change was authorized jointly by AF and AG and was implemented across all four pattern modules before any report-run results were seen.

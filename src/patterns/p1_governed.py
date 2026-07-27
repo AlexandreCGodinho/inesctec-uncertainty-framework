@@ -40,11 +40,17 @@ def _retrieve_relevant_context(context: str, query: str) -> str:
     return " ".join(relevant) if relevant else context
 
 
-DRAFTER_PROMPT = """You are a research analyst. Using the context below, draft an answer to the question.
+DRAFTER_PROMPT_WITH_CONTEXT = """You are a research analyst. Using the context below, draft an answer to the question.
 Base your answer strictly on the provided context. Do not add external knowledge.
 
 CONTEXT:
 {context}
+
+QUESTION: {query}
+
+DRAFT ANSWER:"""
+
+DRAFTER_PROMPT_NO_CONTEXT = """You are a research analyst. Answer the request below using your own knowledge.
 
 QUESTION: {query}
 
@@ -65,12 +71,17 @@ class GovernedWorkflow(Orchestrator):
     def run(self, state: RunState) -> RunState:
         filtered_context = _retrieve_relevant_context(state.reference, state.query)
 
-        draft_call = self.client.call(
-            agent_role="drafter",
-            prompt=DRAFTER_PROMPT.format(
+        if not filtered_context.strip():
+            prompt = DRAFTER_PROMPT_NO_CONTEXT.format(query=state.query)
+        else:
+            prompt = DRAFTER_PROMPT_WITH_CONTEXT.format(
                 context=filtered_context,
                 query=state.query,
-            ),
+            )
+
+        draft_call = self.client.call(
+            agent_role="drafter",
+            prompt=prompt,
             round_index=0,
         )
         state.calls.append(draft_call)

@@ -29,7 +29,7 @@ def _load_experiment_config() -> dict:
     return _CONFIG_CACHE
 
 
-RESEARCHER_PROMPT = """You are a RESEARCHER agent. Extract key facts from the context relevant to the query.
+RESEARCHER_PROMPT_WITH_CONTEXT = """You are a RESEARCHER agent. Extract key facts from the context relevant to the query.
 Be precise, cite sources, do NOT add opinions.
 
 CONTEXT:
@@ -39,7 +39,13 @@ QUERY: {query}
 
 KEY FACTS:"""
 
-ANALYST_PROMPT = """You are an ANALYST agent. Synthesize the research into a clear, structured answer.
+RESEARCHER_PROMPT_NO_CONTEXT = """You are a RESEARCHER agent. Answer the request below using your own knowledge.
+
+QUERY: {query}
+
+KEY FACTS:"""
+
+ANALYST_PROMPT_WITH_CONTEXT = """You are an ANALYST agent. Synthesize the research into a clear, structured answer.
 Use logical reasoning, connect facts, identify gaps.
 
 RESEARCH FINDINGS:
@@ -52,7 +58,16 @@ QUERY: {query}
 
 YOUR ANALYSIS:"""
 
-ANALYST_REVISION_PROMPT = """You are an ANALYST agent. Revise your previous analysis to address the reviewer's critique below.
+ANALYST_PROMPT_NO_CONTEXT = """You are an ANALYST agent. Answer the request below using your own knowledge.
+
+RESEARCH FINDINGS:
+{research}
+
+QUERY: {query}
+
+YOUR ANALYSIS:"""
+
+ANALYST_REVISION_PROMPT_WITH_CONTEXT = """You are an ANALYST agent. Revise your previous analysis to address the reviewer's critique below.
 Use logical reasoning, connect facts, identify gaps.
 
 PREVIOUS ANALYSIS:
@@ -68,11 +83,33 @@ QUERY: {query}
 
 REVISED ANALYSIS:"""
 
-REVIEWER_PROMPT = """You are a REVIEWER agent. Critique the analysis for factual accuracy.
+ANALYST_REVISION_PROMPT_NO_CONTEXT = """You are an ANALYST agent. Answer the request below using your own knowledge.
+
+PREVIOUS ANALYSIS:
+{previous_analysis}
+
+REVIEWER CRITIQUE:
+{reviewer_critique}
+
+QUERY: {query}
+
+REVISED ANALYSIS:"""
+
+REVIEWER_PROMPT_WITH_CONTEXT = """You are a REVIEWER agent. Critique the analysis for factual accuracy.
 Check: are all claims supported? Is anything missing? Is the reasoning sound?
 
 ORIGINAL CONTEXT:
 {context}
+
+ANALYSIS TO REVIEW:
+{analysis}
+
+QUERY: {query}
+
+VERDICT (approved/needs_revision/rejected):
+CRITIQUE:"""
+
+REVIEWER_PROMPT_NO_CONTEXT = """You are a REVIEWER agent. Answer the request below using your own knowledge.
 
 ANALYSIS TO REVIEW:
 {analysis}
@@ -129,22 +166,34 @@ class RoleSeparatedPipeline(Orchestrator):
     def run(self, state: RunState) -> RunState:
         context = state.reference
 
+        if not context.strip():
+            researcher_prompt = RESEARCHER_PROMPT_NO_CONTEXT.format(query=state.query)
+        else:
+            researcher_prompt = RESEARCHER_PROMPT_WITH_CONTEXT.format(context=context, query=state.query)
+
         researcher_call = self.client.call(
             agent_role="researcher",
-            prompt=RESEARCHER_PROMPT.format(context=context, query=state.query),
+            prompt=researcher_prompt,
             round_index=0,
         )
         state.calls.append(researcher_call)
 
         for current_round in range(self.max_revisions + 1):
             if current_round == 0:
-                analyst_call = self.client.call(
-                    agent_role="analyst",
-                    prompt=ANALYST_PROMPT.format(
+                if not context.strip():
+                    prompt = ANALYST_PROMPT_NO_CONTEXT.format(
+                        research=researcher_call.response_text,
+                        query=state.query,
+                    )
+                else:
+                    prompt = ANALYST_PROMPT_WITH_CONTEXT.format(
                         research=researcher_call.response_text,
                         context=context,
                         query=state.query,
-                    ),
+                    )
+                analyst_call = self.client.call(
+                    agent_role="analyst",
+                    prompt=prompt,
                     round_index=0,
                     want_logprobs=True,
                 )
@@ -153,26 +202,42 @@ class RoleSeparatedPipeline(Orchestrator):
                 prev_analyst = _find_analyst_by_round(state.calls, current_round - 1)
                 prev_analysis = prev_analyst.response_text if prev_analyst else ""
                 critique = prev_reviewer.response_text if prev_reviewer else ""
-                analyst_call = self.client.call(
-                    agent_role="analyst",
-                    prompt=ANALYST_REVISION_PROMPT.format(
+                if not context.strip():
+                    prompt = ANALYST_REVISION_PROMPT_NO_CONTEXT.format(
+                        previous_analysis=prev_analysis,
+                        reviewer_critique=critique,
+                        query=state.query,
+                    )
+                else:
+                    prompt = ANALYST_REVISION_PROMPT_WITH_CONTEXT.format(
                         previous_analysis=prev_analysis,
                         reviewer_critique=critique,
                         context=context,
                         query=state.query,
-                    ),
+                    )
+                analyst_call = self.client.call(
+                    agent_role="analyst",
+                    prompt=prompt,
                     round_index=current_round,
                     want_logprobs=True,
                 )
             state.calls.append(analyst_call)
 
-            reviewer_call = self.client.call(
-                agent_role="reviewer",
-                prompt=REVIEWER_PROMPT.format(
+            if not context.strip():
+                reviewer_prompt = REVIEWER_PROMPT_NO_CONTEXT.format(
+                    analysis=analyst_call.response_text,
+                    query=state.query,
+                )
+            else:
+                reviewer_prompt = REVIEWER_PROMPT_WITH_CONTEXT.format(
                     context=context,
                     analysis=analyst_call.response_text,
                     query=state.query,
-                ),
+                )
+
+            reviewer_call = self.client.call(
+                agent_role="reviewer",
+                prompt=reviewer_prompt,
                 round_index=current_round,
             )
             state.calls.append(reviewer_call)
