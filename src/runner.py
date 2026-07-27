@@ -130,7 +130,7 @@ def load_dataset_queries(
     try:
         if dataset_name == "finqa":
             import urllib.request
-            finqa_url = "https://raw.githubusercontent.com/czyssrs/FinQA/main/dataset/test.json"
+            finqa_url = "https://raw.githubusercontent.com/czyssrs/FinQA/0f16e2867befa6840783e58be38c9efb9229d742/dataset/test.json"
             req = urllib.request.Request(finqa_url, headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(req) as resp:
                 hf_dataset = json.loads(resp.read().decode("utf-8"))
@@ -265,6 +265,7 @@ def run_pilot(
     *output_dir* — where JSONL files are written (default ``"telemetry"``).
     """
     manifest_data = {
+        "finqa_commit": "0f16e2867befa6840783e58be38c9efb9229d742",
         "runs": {}
     }
 
