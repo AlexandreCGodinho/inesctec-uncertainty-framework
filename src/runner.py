@@ -42,7 +42,7 @@ _DATASET_FIELD_MAP: dict[str, dict[str, str | None]] = {
 
 
 def load_dataset_queries(
-    dataset_name: str, sample_size: int | None, base_seed: int = 1234
+    dataset_name: str, sample_size: int | None, base_seed: int = 1234, sampling_seed: int = 42
 ) -> list[dict[str, str]]:
     """Load queries for a given dataset name.
 
@@ -69,6 +69,21 @@ def load_dataset_queries(
       ``[]`` with a logged warning.  Must be implemented later via
       ``inspect_evals`` or the livebench API.
     """
+    import random
+    
+    dev_split_dir = Path("data/dev_split_groq_llama31")
+    excluded_ids = set()
+    if dev_split_dir.exists():
+        for jsonl_file in dev_split_dir.glob("*.jsonl"):
+            with open(jsonl_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    try:
+                        record = json.loads(line)
+                        if "query_id" in record:
+                            excluded_ids.add(str(record["query_id"]))
+                    except Exception:
+                        pass
+
     if dataset_name == "livebench":
         import livebench.common as lb
         # Use the official LiveBench utility to fetch and parse the dataset.
@@ -84,6 +99,10 @@ def load_dataset_queries(
                 query_text = str(turns[0]) if isinstance(turns, list) and len(turns) > 0 else str(q.get("question", ""))
                 ref = str(q.get("ground_truth", q.get("answer", "")))
                 
+                
+                if qid in excluded_ids:
+                    continue
+
                 queries.append({
                     "query_id": qid,
                     "query": query_text,
@@ -91,7 +110,7 @@ def load_dataset_queries(
                 })
         
         if sample_size is not None:
-            queries = queries[:sample_size]
+            queries = random.Random(sampling_seed).sample(queries, min(sample_size, len(queries)))
         return queries
 
     import datasets as hf_datasets  # type: ignore[import-untyped]
@@ -128,13 +147,21 @@ def load_dataset_queries(
         ) from exc
 
     all_items = list(hf_dataset)
+    
+    filtered_items = []
+    for i, raw in enumerate(all_items):
+        qid_field = field_map.get("query_id", "id")
+        qid = str(raw.get(qid_field, i))
+        if qid not in excluded_ids:
+            filtered_items.append(raw)
+            
     if sample_size is not None:
-        all_items = all_items[:sample_size]
+        filtered_items = random.Random(sampling_seed).sample(filtered_items, min(sample_size, len(filtered_items)))
     else:
         logger.warning("No sample_size limit set — loading full dataset '%s'", hf_id)
 
     queries = []
-    for i, raw in enumerate(all_items):
+    for i, raw in enumerate(filtered_items):
         try:
             qid_field = field_map.get("query_id", "id")
             query_text_field = field_map.get("query", "query")
@@ -248,7 +275,7 @@ def run_pilot(
             )
             continue
         queries = load_dataset_queries(
-            dataset_name, sample_size, config.get("base_seed", 1234)
+            dataset_name, sample_size, config.get("base_seed", 1234), config.get("sampling_seed", 42)
         )
         if not queries:
             raise ValueError(f"Dataset '{dataset_name}' returned 0 records. Fail-fast rule triggered.")
@@ -300,9 +327,11 @@ def run_pilot(
             
             # Record manifest entries
             manifest_key = f"{dataset_name}_pattern{pattern_id.value}"
+            sampled_ids = [str(q["query_id"]) for q in queries]
             manifest_data["runs"][manifest_key] = {
                 "expected": expected_count,
-                "actual": actual_count
+                "actual": actual_count,
+                "sampled_ids": sampled_ids
             }
 
     # Write End-of-run manifest

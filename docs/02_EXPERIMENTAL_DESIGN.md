@@ -159,3 +159,12 @@ The following parameters are designated as **Design Constants**. None of these m
 The pilot of 18-19/07 is formally designated as the **development split (Llama 3.1 8B via Groq)**. The corresponding files are committed and tracked under the directory `data/dev_split_groq_llama31/`.
 Prompt tuning is allowed on pilot data only; the final report run uses prompts frozen at commit `<hash>` prior to launch, on a disjoint sampled query set.
 Prompt-engineering effort is equalized across patterns and documented here.
+
+## 9. Amendment 1 (27/07) - Sampling Protocol
+
+A post-pilot audit revealed a structural bias in the initial sampling logic, which used a deterministic first-N slice (`[:sample_size]`). On datasets ordered by category (such as PopQA, whose first 150 items are all "occupation" relations), this produced an unrepresentative sample.
+
+To correct this, the sampling protocol has been updated:
+1. **Seeded Uniform Sampling:** The first-N slice was replaced with uniform random sampling without replacement, using a local `random.Random(SAMPLING_SEED)` instance to guarantee determinism without relying on the global random state.
+2. **Configuration-driven Seed:** `SAMPLING_SEED` is defined exclusively in `experiment.yaml`, completely separated from the script logic.
+3. **Contamination Control:** All `query_ids` previously exposed during the Groq pilot (the dev split) are strictly filtered out and excluded from the pool before sampling occurs. This ensures the N=150 report run is a completely disjoint and virgin sample.
