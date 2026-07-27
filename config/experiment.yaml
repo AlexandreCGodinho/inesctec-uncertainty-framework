@@ -3,6 +3,7 @@ inference_provider: vllm
 vllm_gpu_memory_utilization: 0.5   # Limita pre-alocacao do vLLM a 50% da VRAM para evitar OOM na A100
 dtype: bfloat16
 base_seed: 1234
+sampling_seed: 42
 request_timeout_seconds: 60
 pattern4_num_agents: 3               # locked in doc 02, Section 4.3; do not change
 pattern4_agent_seeds: [1234, 5678, 9012]   # one seed per symmetric agent
