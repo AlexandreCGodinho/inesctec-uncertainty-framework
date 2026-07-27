@@ -15,7 +15,7 @@ Store your HF token in Colab via `Secrets` (key name: `HF_TOKEN`). Never paste t
 
 ## 2. Environment
 
-All heavy execution happens on **Google Colab Pro with an A100 (40 GB) runtime**. Select it via `Runtime > Change runtime type > A100 GPU`. Do not use H100 instances: they burn the project's credits (see `02_EXPERIMENTAL_DESIGN.md`, Section 4, for the envelope).
+All heavy execution happens on **Google Colab Pro with an A100 (80 GB) runtime**. Select it via `Runtime > Change runtime type > A100 GPU`. Do not use H100 instances: they burn the project's credits (see `02_EXPERIMENTAL_DESIGN.md`, Section 4, for the envelope).
 
 Local development (writing and unit-testing orchestrator code without a GPU) is encouraged: everything except real inference runs on your laptop with Python 3.11+.
 

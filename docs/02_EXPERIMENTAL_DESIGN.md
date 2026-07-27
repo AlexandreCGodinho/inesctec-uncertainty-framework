@@ -62,11 +62,11 @@ Applying the criterion of 3.1, the selected base model is **Gemma 4 12B IT (bflo
 
 ---
 
-## 4. Hardware Envelope: Google Colab Pro, NVIDIA A100 40 GB
+## 4. Hardware Envelope: Google Colab Pro, NVIDIA A100 80 GB
 
-All execution is restricted to the **A100 (40 GB VRAM)** tier of Google Colab Pro. The H100 tier is excluded due to prohibitive credit consumption. All memory reasoning below is for 40 GB.
+All execution is restricted to the **A100 (80 GB VRAM)** tier of Google Colab Pro. The H100 tier is excluded due to prohibitive credit consumption. All memory reasoning below is for 80 GB.
 
-### 4.1 Memory Allocation Map (A100, 40 GB)
+### 4.1 Memory Allocation Map (A100, 80 GB)
 
 ```
 ====================================================================================
@@ -145,11 +145,11 @@ All phases run exclusively on the A100 environment with the base model of Sectio
 
 ## 7. Design Constants
 
-The following parameters are designated as **Design Constants**. None of these may be changed without prior written approval from Alexandre or Álvaro:
+The following parameters are designated as **Design Constants**. None of these may be changed without prior written approval from Alexandre and Álvaro:
 1. **Base Model**: Gemma 4 12B IT (bfloat16)
 2. **Inference Provider**: vLLM
-3. **Hardware Envelope**: A100 (40 GB VRAM)
-4. **Datasets and Sampled Query IDs**: **Provisional** N=150 queries per dataset (Pending confirmation from the A100 Smoke Run CU burn rate). (Budget math corrected: N=150 generates ~17,600 total calls considering P4x3 and u_F batching, totaling ~477 CUs, maintaining a safety margin against the 600 CUs limit).
+3. **Hardware Envelope**: A100 (80 GB VRAM)
+4. **Datasets and Sampled Query IDs**: N=150 queries per dataset (confirmed by A100 Smoke Run CU burn rate). (Budget math corrected: N=150 generates ~17,600 total calls considering P4x3 and u_F batching, totaling ~477 CUs, maintaining a safety margin against the 600 CUs limit).
 5. **Prompts after the freeze**
 6. **Iteration caps**
 7. **Ensemble Size**: K = 3
