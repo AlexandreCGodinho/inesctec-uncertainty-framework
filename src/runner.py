@@ -72,7 +72,7 @@ def load_dataset_queries(
     if dataset_name == "livebench":
         import livebench.common as lb
         # Use the official LiveBench utility to fetch and parse the dataset.
-        categories, _ = lb.get_categories_tasks()
+        categories, _ = lb.get_categories_tasks(bench_name="live_bench/reasoning")
         queries = []
         for cat_name, cat_dataset in categories.items():
             # load_questions filters by release date correctly per the official harness
@@ -107,13 +107,20 @@ def load_dataset_queries(
     logger.info("Loading dataset %s (sample_size=%s)", hf_id, sample_size)
 
     try:
-        ds_dict = hf_datasets.load_dataset(hf_id, trust_remote_code=True)
-        if "train" in ds_dict:
-            hf_dataset = ds_dict["train"]
-        elif "test" in ds_dict:
-            hf_dataset = ds_dict["test"]
+        if dataset_name == "finqa":
+            import urllib.request
+            finqa_url = "https://raw.githubusercontent.com/czyssrs/FinQA/main/dataset/test.json"
+            req = urllib.request.Request(finqa_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req) as resp:
+                hf_dataset = json.loads(resp.read().decode("utf-8"))
         else:
-            hf_dataset = ds_dict[list(ds_dict.keys())[0]]
+            ds_dict = hf_datasets.load_dataset(hf_id, trust_remote_code=True)
+            if "train" in ds_dict:
+                hf_dataset = ds_dict["train"]
+            elif "test" in ds_dict:
+                hf_dataset = ds_dict["test"]
+            else:
+                hf_dataset = ds_dict[list(ds_dict.keys())[0]]
     except Exception as exc:
         raise RuntimeError(
             f"Failed to download dataset '{hf_id}'. "
@@ -134,8 +141,12 @@ def load_dataset_queries(
             ref_field = field_map.get("reference")
 
             qid = str(raw.get(qid_field, i))
-            query_text = str(raw.get(query_text_field, ""))
-            ref = str(raw[ref_field]) if ref_field and ref_field in raw else ""
+            if dataset_name == "finqa" and isinstance(raw.get("qa"), dict):
+                query_text = str(raw["qa"].get("question", ""))
+                ref = str(raw["qa"].get("answer", ""))
+            else:
+                query_text = str(raw.get(query_text_field, ""))
+                ref = str(raw[ref_field]) if ref_field and ref_field in raw else ""
 
             queries.append({
                 "query_id": qid,
@@ -186,6 +197,26 @@ def _resolve_sample_size(config: dict, dataset_name: str) -> int:
     return sample_size
 
 
+def _load_completed_query_ids(dataset_name: str, pattern_id: PatternID, output_dir: str) -> set[str]:
+    out = Path(output_dir)
+    filename = out / f"{dataset_name}_pattern{pattern_id.value}.jsonl"
+    if not filename.exists():
+        return set()
+    completed = set()
+    with open(filename, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                data = json.loads(line)
+                if "query_id" in data:
+                    completed.add(str(data["query_id"]))
+            except Exception:
+                continue
+    return completed
+
+
 def run_pilot(
     datasets: list[str],
     patterns: list[tuple[PatternID, type]],
@@ -229,9 +260,19 @@ def run_pilot(
 
         for pattern_id, orchestrator_cls in patterns:
             expected_count = len(queries)
-            actual_count = 0
+            completed_ids = _load_completed_query_ids(dataset_name, pattern_id, output_dir)
+            actual_count = len(completed_ids)
+            if completed_ids:
+                logger.info(
+                    "Resuming dataset '%s' pattern %s: skipping %d already completed query(ies)",
+                    dataset_name,
+                    pattern_id.name,
+                    len(completed_ids),
+                )
 
             for query_data in queries:
+                if str(query_data["query_id"]) in completed_ids:
+                    continue
                 try:
                     state = RunState(
                         run_id=f"{query_data['query_id']}_{pattern_id.name}",
@@ -279,6 +320,8 @@ if __name__ == "__main__":
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
 
+    import argparse
+    import os
     import yaml
     from src.llm_client import LLMClient, check_server_available
     from src.patterns.p1_governed import GovernedWorkflow
@@ -289,6 +332,15 @@ if __name__ == "__main__":
     cfg_path = Path(__file__).resolve().parent.parent / "config" / "experiment.yaml"
     with open(cfg_path, encoding="utf-8") as f:
         config = yaml.safe_load(f)
+
+    parser = argparse.ArgumentParser(description="Run uncertainty framework pilot.")
+    parser.add_argument(
+        "--output-dir",
+        default=os.environ.get("TELEMETRY_DIR", config.get("output_dir", "telemetry")),
+        help="Directory to store telemetry JSONL files.",
+    )
+    args, _ = parser.parse_known_args()
+    output_dir = args.output_dir
 
     client = LLMClient()
 
@@ -307,4 +359,5 @@ if __name__ == "__main__":
         (PatternID.MULTI_PERSPECTIVE_DELIBERATION, MultiPerspectiveDeliberation),
     ]
 
-    run_pilot(datasets, patterns, client, config)
+    run_pilot(datasets, patterns, client, config, output_dir=output_dir)
+

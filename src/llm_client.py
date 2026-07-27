@@ -54,17 +54,24 @@ class LLMClient:
                  seed: int | None = None):
         cfg = _load_experiment_config()
         
+        provider = cfg.get("inference_provider", "openai")
+        if api_base is None:
+            if provider in ("vllm", "hosted_vllm"):
+                api_base = "http://localhost:8000/v1"
+            else:
+                api_base = os.environ.get("OPENAI_API_BASE")
         self.api_base = api_base
-        self.api_key = None
+        self.api_key = "EMPTY"
         
         raw_model = model if model is not None else cfg["model_id"]
-        provider = cfg.get("inference_provider", "openai")
+        if provider == "vllm" and self.api_base is not None:
+            provider = "hosted_vllm"
         prefix = f"{provider}/"
         if not raw_model.startswith(prefix):
             raw_model = prefix + raw_model
         self.model = raw_model
         self.model_name = cfg["model_id"]
-        self.provider = cfg.get("inference_provider", "openai")
+        self.provider = provider
         self.seed = cfg["base_seed"] if seed is None else seed
         self._timeout = cfg.get("request_timeout_seconds", 60)
         self._completion = None
@@ -127,7 +134,7 @@ class LLMClient:
             model=self.model, api_base=self.api_base, api_key=self.api_key,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=max_tokens,
-            logprobs=want_logprobs, top_logprobs=5 if want_logprobs else None,
+            logprobs=want_logprobs,
             temperature=0.7, seed=self.seed, timeout=timeout,
         )
 
@@ -168,16 +175,21 @@ class MockLLMClient(LLMClient):
                        latency_ms=0.1, tokens_prompt=10, tokens_completion=5)
 
 
-def check_server_available(api_base: str, timeout: float = 5.0) -> bool:
+def check_server_available(api_base: str | None = None, timeout: float = 5.0) -> bool:
     try:
         from litellm import completion
         cfg = _load_experiment_config()
         provider = cfg.get("inference_provider", "openai")
+        if api_base is None:
+            if provider in ("vllm", "hosted_vllm"):
+                api_base = "http://localhost:8000/v1"
+        if provider == "vllm" and api_base is not None:
+            provider = "hosted_vllm"
         raw_model = cfg["model_id"]
         model = f"{provider}/{raw_model}" if not raw_model.startswith(f"{provider}/") else raw_model
         
         r = completion(
-            model=model, api_base=api_base,
+            model=model, api_base=api_base, api_key="EMPTY",
             messages=[{"role": "user", "content": "ping"}],
             max_tokens=1, timeout=timeout,
         )

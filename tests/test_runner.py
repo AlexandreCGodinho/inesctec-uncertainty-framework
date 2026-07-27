@@ -391,3 +391,26 @@ class TestTaskB1Requirements:
         # synthetic_queries has 3 items
         assert manifest_data["runs"][run_key]["expected"] == 3
         assert manifest_data["runs"][run_key]["actual"] == 3
+
+    def test_run_pilot_resume_skips_completed_queries(self, synthetic_queries, tmp_path, monkeypatch):
+        monkeypatch.setattr(
+            "src.runner.load_dataset_queries",
+            lambda name, size, seed=None, **kw: synthetic_queries,
+        )
+        config = {"samples_per_dataset": {"test_resume": 3}, "base_seed": 1234}
+        patterns = [(PatternID.GOVERNED_WORKFLOW, GovernedWorkflow)]
+
+        # 1. Primeira execução: grava 3 queries
+        run_pilot(["test_resume"], patterns, MockLLMClient(), config, output_dir=str(tmp_path))
+        lines_before = (tmp_path / "test_resume_pattern1.jsonl").read_text().strip().split("\n")
+        assert len(lines_before) == 3
+
+        # 2. Segunda execução (retomada): deve saltar as 3 queries existentes sem duplicar linhas
+        run_pilot(["test_resume"], patterns, MockLLMClient(), config, output_dir=str(tmp_path))
+        lines_after = (tmp_path / "test_resume_pattern1.jsonl").read_text().strip().split("\n")
+        assert len(lines_after) == 3
+
+        with open(tmp_path / "manifest.json", "r", encoding="utf-8") as f:
+            manifest_data = json.load(f)
+        assert manifest_data["runs"]["test_resume_pattern1"]["actual"] == 3
+
