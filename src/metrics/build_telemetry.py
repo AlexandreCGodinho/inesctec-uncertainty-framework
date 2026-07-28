@@ -1,4 +1,5 @@
 import re
+from typing import Any
 
 from src.schemas import RunState, Telemetry, PatternID, LLMCall
 from src.metrics.u_L import compute_u_L
@@ -99,12 +100,13 @@ def _extract_last_round_analyst_logprobs(state: RunState) -> list[list[float]]:
     return [lp for rc, lp in entries if rc == max_round]
 
 
-def build_telemetry(state: RunState) -> Telemetry:
+def build_telemetry(state: RunState, client: Any = None) -> Telemetry:
     u_L = compute_u_L(state.final_answer or "")
+
     
     judge_parse_error = False
     try:
-        u_F = compute_u_F(state.final_answer or "", state.reference)
+        u_F = compute_u_F(state.final_answer or "", state.reference, client)
     except JudgeParseError:
         u_F = None
         judge_parse_error = True

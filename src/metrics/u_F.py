@@ -9,7 +9,7 @@ def compute_u_F(
     llm_judge_callable=None,
 ) -> float:
     if not llm_judge_callable:
-        return 0.0
+        raise ValueError("LLM Judge is missing. Factual evaluation aborted.")
     claims = _split_claims(final_answer)
     if not claims:
         return 0.5

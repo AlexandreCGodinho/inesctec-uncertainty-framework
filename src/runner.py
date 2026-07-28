@@ -158,7 +158,13 @@ def load_dataset_queries(
             filtered_items.append(raw)
             
     if sample_size is not None:
-        filtered_items = random.Random(sampling_seed).sample(filtered_items, min(sample_size, len(filtered_items)))
+        if dataset_name == "finqa":
+            worst_case_item = next((item for item in filtered_items if str(item.get(field_map.get("query_id", "id"))) == "NKE/2009/page_43.pdf-2"), None)
+            filtered_items = random.Random(sampling_seed).sample(filtered_items, min(sample_size, len(filtered_items)))
+            if worst_case_item and worst_case_item not in filtered_items:
+                filtered_items[-1] = worst_case_item
+        else:
+            filtered_items = random.Random(sampling_seed).sample(filtered_items, min(sample_size, len(filtered_items)))
     else:
         logger.warning("No sample_size limit set — loading full dataset '%s'", hf_id)
 
@@ -280,6 +286,12 @@ def run_pilot(
     """
     manifest_data = {
         "finqa_commit": "0f16e2867befa6840783e58be38c9efb9229d742",
+        "server_params": {
+            "max-model-len": 8192,
+            "gpu-memory-utilization": 0.90,
+            "model": "google/gemma-4-12b-it",
+            "dtype": "bfloat16"
+        },
         "runs": {}
     }
 
@@ -332,7 +344,7 @@ def run_pilot(
                     )
                     orchestrator = orchestrator_cls(client)
                     state = orchestrator.run(state)
-                    telemetry = build_telemetry(state)
+                    telemetry = build_telemetry(state, client)
                     write_telemetry_jsonl(telemetry, dataset_name, output_dir)
                     actual_count += 1
                 except Exception:
