@@ -8,9 +8,18 @@ class PopqaScorer(Scorer):
     def score(self, record: dict, reference: dict) -> dict:
         raw_prediction = record.get("final_answer", "")
         ref = reference.get("answer", reference.get("reference", ""))
+        possible = reference.get("possible_answers", None)
+        if possible is not None:
+            import ast
+            try:
+                aliases = ast.literal_eval(possible)
+            except (ValueError, SyntaxError):
+                aliases = [ref]
+        else:
+            aliases = [ref]
         extracted = _extract_answer(raw_prediction)
-        raw_scores = _compute_scores(ref, raw_prediction)
-        extracted_scores = _compute_scores(ref, extracted)
+        raw_scores = _compute_scores(aliases, raw_prediction)
+        extracted_scores = _compute_scores(aliases, extracted)
         return {
             "match": extracted_scores["match"],
             "match_jaccard_word": extracted_scores["match_jaccard_word"],
@@ -20,12 +29,13 @@ class PopqaScorer(Scorer):
         }
 
 
-def _compute_scores(reference: str, prediction: str) -> dict:
+def _compute_scores(aliases: list[str], prediction: str) -> dict:
+    ref = aliases[0] if aliases else ""
     return {
-        "match": 1.0 if _is_alias_match(reference, prediction) else 0.0,
-        "match_jaccard_word": _jaccard_word_score(reference, prediction),
-        "match_jaccard_bigram": _jaccard_bigram_score(reference, prediction),
-        "match_acronym": _acronym_score(reference, prediction),
+        "match": 1.0 if _is_alias_match(aliases, prediction) else 0.0,
+        "match_jaccard_word": _jaccard_word_score(ref, prediction),
+        "match_jaccard_bigram": _jaccard_bigram_score(ref, prediction),
+        "match_acronym": _acronym_score(ref, prediction),
     }
 
 
@@ -74,16 +84,13 @@ def _normalize(text: str) -> list[str]:
     return [w for w in words if len(w) > 1]
 
 
-def _is_alias_match(reference: str, prediction: str) -> bool:
-    ref_words = _normalize(reference)
-    pred_words = _normalize(prediction)
-    if not ref_words and not pred_words:
+def _is_alias_match(aliases: list[str], prediction: str) -> bool:
+    if not aliases:
         return True
-    if not ref_words:
-        return True
-    if not pred_words:
+    if not prediction:
         return False
-    return ref_words == pred_words
+    pred_lower = prediction.lower()
+    return any(a.lower() in pred_lower for a in aliases)
 
 
 def _jaccard(a: set, b: set) -> float:
