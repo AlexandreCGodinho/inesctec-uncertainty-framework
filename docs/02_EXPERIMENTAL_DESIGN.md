@@ -199,3 +199,7 @@ Effective immediately (post-PR #28):
 ## 12. Amendment 4 (28/07) - Conditional Prompt Framing for Evaluator Judge
 
 Following the logic of Amendment 2, an identical structural adaptation has been implemented for the Evaluator Judge. When evaluating claims for datasets lacking a reference context (PopQA, IFEval), the Judge will now be explicitly instructed to assess factual accuracy using its own knowledge. This conditional framing prevents the parser from choking on an impossible task and guarantees robust JSON generation, mitigating evaluation failures in empty contexts.
+
+## 13. Amendment 5 (29/07) - Sample Limits and Tag v6 Migration
+
+Following the successful validation of the testing environment (Micro-Smoke Run v5), the artificial sample limit (`samples_per_dataset: 2`) has been removed and expanded to `150` for the official production run. To ensure immutability and strict auditing compliance for the final execution, the Colab initialization protocol now rigidly targets the `report-run-freeze-v6` tag.
