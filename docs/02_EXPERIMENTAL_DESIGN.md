@@ -86,6 +86,7 @@ Mandatory controls, enforced by the orchestrator:
 1. **Per-agent context ceiling** in Pattern 4 (value set during Phase 2 profiling; initial ceiling 8k tokens per agent).
 2. **Truncation event logging**: every run records whether any truncation or cache eviction occurred.
 3. **Exclusion rule**: runs with truncation events are flagged and excluded from the main analysis (reported separately in an appendix).
+4. **Oversized Document Protection**: queries structurally exceeding ~6800 tokens (estimated via the fast heuristic `len(query_text) / 3.5 > 6800`) are blocked prior to prompt generation. They are excluded and securely logged as `oversized_ids` in the manifest to guarantee strict compliance with the 8192 native window without silent truncation.
 
 ### 4.3 Ensemble Size for Pattern 4 (Locked Parameter: K = 3)
 
@@ -122,6 +123,8 @@ Four datasets are selected to give every U(x) component at least one dataset whe
 | IFEval | Zhou et al., 2023. Instruction-Following Evaluation for Large Language Models. | `load_dataset("google/IFEval")` |
 | LiveBench | Abacus.AI, 2025. LiveBench: A Challenging, Contamination-Free LLM Benchmark. | via `inspect_evals` or livebench.ai source API |
 | FinQA | Chen et al., 2021. FinQA: A Dataset of Numerical Reasoning over Financial Data. | `load_dataset("czyssrs/FinQA")` |
+
+**FinQA Design Note (Table Linearization):** The financial tables in FinQA are extracted and linearized row-by-row using a simple separator (e.g., `Row: [cell] | [cell]`) to optimize the base model's structural reading capacity.
 
 Sample sizes per dataset and per phase are fixed during Phase 1 and recorded in the repository (`config/experiment.yaml`), never in this document.
 

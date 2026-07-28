@@ -1,6 +1,6 @@
 model_id: google/gemma-4-12b-it     # locked in doc 02, Section 3
 inference_provider: vllm
-vllm_gpu_memory_utilization: 0.5   # Limita pre-alocacao do vLLM a 50% da VRAM para evitar OOM na A100
+vllm_gpu_memory_utilization: 0.9   # Limita pre-alocacao do vLLM a 90% da VRAM na A100 (alinhado com Colab)
 dtype: bfloat16
 base_seed: 1234
 sampling_seed: 42
@@ -20,14 +20,14 @@ pattern4_max_iterations: 2         # Pattern 4 max refinement rounds
 # Dynamic Token Ceilings
 role_max_tokens:
   # Generation and Research functions (High ceiling to prevent truncation across all 4 datasets, especially IFEval)
-  drafter: 2048
-  formatter: 2048
-  researcher: 2048
-  analyst: 2048
-  solo_reflexive: 2048
-  analyst_1: 2048
-  analyst_2: 2048
-  analyst_3: 2048
+  drafter: 1400
+  formatter: 1400
+  researcher: 1400
+  analyst: 1400
+  solo_reflexive: 1400
+  analyst_1: 1400
+  analyst_2: 1400
+  analyst_3: 1400
   
   # Evaluation functions (Lower ceiling)
   reviewer: 1024
