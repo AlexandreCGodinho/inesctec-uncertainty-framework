@@ -42,7 +42,7 @@ _DATASET_FIELD_MAP: dict[str, dict[str, str | None]] = {
 
 
 def load_dataset_queries(
-    dataset_name: str, sample_size: int | None, base_seed: int = 1234, sampling_seed: int = 42
+    dataset_name: str, sample_size: int | None, base_seed: int = 1234, sampling_seed: int = 42, oversized_ids: list[str] | None = None
 ) -> list[dict[str, str]]:
     """Load queries for a given dataset name.
 
@@ -153,7 +153,7 @@ def load_dataset_queries(
     filtered_items = []
     for i, raw in enumerate(all_items):
         qid_field = field_map.get("query_id", "id")
-        qid = str(raw.get(qid_field, i))
+        qid = str(raw.get(qid_field, i)) if isinstance(raw, dict) else str(i)
         if qid not in excluded_ids:
             filtered_items.append(raw)
             
@@ -171,11 +171,25 @@ def load_dataset_queries(
 
             qid = str(raw.get(qid_field, i))
             if dataset_name == "finqa" and isinstance(raw.get("qa"), dict):
-                query_text = str(raw["qa"].get("question", ""))
+                pre = " ".join(raw.get("pre_text", []))
+                table_lines = []
+                for row in raw.get("table", []):
+                    table_lines.append("Row: " + " | ".join(str(c) for c in row))
+                table_str = "\n".join(table_lines)
+                post = " ".join(raw.get("post_text", []))
+                question = str(raw["qa"].get("question", ""))
+                
+                query_text = f"Context:\n{pre}\n\nTable:\n{table_str}\n\n{post}\n\nQuestion: {question}"
                 ref = str(raw["qa"].get("answer", ""))
             else:
                 query_text = str(raw.get(query_text_field, ""))
                 ref = str(raw[ref_field]) if ref_field and ref_field in raw else ""
+
+            if (len(query_text) / 3.5) > 6800:
+                logger.warning("Skipping oversized query %s (estimated > 6800 tokens).", qid)
+                if oversized_ids is not None:
+                    oversized_ids.append(qid)
+                continue
 
             queries.append({
                 "query_id": qid,
@@ -277,8 +291,9 @@ def run_pilot(
                 "Skipping dataset '%s': %s", dataset_name, exc
             )
             continue
+        oversized_ids = []
         queries = load_dataset_queries(
-            dataset_name, sample_size, config.get("base_seed", 1234), config.get("sampling_seed", 42)
+            dataset_name, sample_size, config.get("base_seed", 1234), config.get("sampling_seed", 42), oversized_ids=oversized_ids
         )
         if not queries:
             raise ValueError(f"Dataset '{dataset_name}' returned 0 records. Fail-fast rule triggered.")
@@ -334,7 +349,8 @@ def run_pilot(
             manifest_data["runs"][manifest_key] = {
                 "expected": expected_count,
                 "actual": actual_count,
-                "sampled_ids": sampled_ids
+                "sampled_ids": sampled_ids,
+                "oversized_ids": oversized_ids
             }
 
     # Write End-of-run manifest

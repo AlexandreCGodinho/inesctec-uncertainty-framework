@@ -188,7 +188,7 @@ class TestRunPilot:
     def test_end_to_end_with_mock_client(self, synthetic_queries, tmp_path, monkeypatch):
         monkeypatch.setattr(
             "src.runner.load_dataset_queries",
-            lambda name, size, seed=None, **kw: synthetic_queries,
+            lambda *args, **kw: synthetic_queries,
         )
 
         config = {"samples_per_dataset": {"test": 3}, "base_seed": 1234}
@@ -228,7 +228,7 @@ class TestRunPilot:
     def test_end_to_end_with_all_patterns(self, synthetic_queries, tmp_path, monkeypatch):
         monkeypatch.setattr(
             "src.runner.load_dataset_queries",
-            lambda name, size, seed=None, **kw: synthetic_queries[:2],
+            lambda *args, **kw: synthetic_queries[:2],
         )
 
         config = {"samples_per_dataset": {"test": 2}, "base_seed": 1234}
@@ -265,7 +265,7 @@ class TestRunPilot:
     # test_no_query_skips_gracefully removed because empty query now triggers fail-fast
 
     def test_missing_dataset_in_config_raises_and_is_logged(self, monkeypatch, tmp_path, caplog):
-        def mock_load(name, size, seed=None, **kw):
+        def mock_load(*args, **kw):
             return [{"query_id": "q1", "query": "Q?", "reference": "Ref."}]
 
         monkeypatch.setattr("src.runner.load_dataset_queries", mock_load)
@@ -282,7 +282,7 @@ class TestRunPilot:
         assert files == ["manifest.json"]
 
     def test_null_sample_size_raises_and_is_logged(self, monkeypatch, tmp_path, caplog):
-        def mock_load(name, size, seed=None, **kw):
+        def mock_load(*args, **kw):
             return [{"query_id": "q1", "query": "Q?", "reference": "Ref."}]
 
         monkeypatch.setattr("src.runner.load_dataset_queries", mock_load)
@@ -298,8 +298,8 @@ class TestRunPilot:
         assert files == ["manifest.json"]
 
     def test_configured_dataset_still_works(self, monkeypatch, tmp_path):
-        def mock_load(name, size, seed=None, **kw):
-            assert size == 5
+        def mock_load(*args, **kw):
+            assert args[1] == 5
             return [{"query_id": "q1", "query": "Q?", "reference": "Ref."}]
 
         monkeypatch.setattr("src.runner.load_dataset_queries", mock_load)
@@ -326,7 +326,7 @@ class TestResilience:
 
         monkeypatch.setattr(
             "src.runner.load_dataset_queries",
-            lambda name, size, seed=None, **kw: synthetic,
+            lambda *args, **kw: synthetic,
         )
 
         call_count = [0]
@@ -357,7 +357,7 @@ class TestTaskB1Requirements:
         # Mock load_dataset_queries to return empty list
         monkeypatch.setattr(
             "src.runner.load_dataset_queries",
-            lambda name, size, seed=None, **kw: [],
+            lambda *args, **kw: [],
         )
 
         config = {"samples_per_dataset": {"empty_dataset": 3}, "base_seed": 1234}
@@ -370,7 +370,7 @@ class TestTaskB1Requirements:
     def test_run_pilot_generates_manifest(self, synthetic_queries, tmp_path, monkeypatch):
         monkeypatch.setattr(
             "src.runner.load_dataset_queries",
-            lambda name, size, seed=None, **kw: synthetic_queries,
+            lambda *args, **kw: synthetic_queries,
         )
 
         config = {"samples_per_dataset": {"test_manifest": 3}, "base_seed": 1234}
@@ -395,7 +395,7 @@ class TestTaskB1Requirements:
     def test_run_pilot_resume_skips_completed_queries(self, synthetic_queries, tmp_path, monkeypatch):
         monkeypatch.setattr(
             "src.runner.load_dataset_queries",
-            lambda name, size, seed=None, **kw: synthetic_queries,
+            lambda *args, **kw: synthetic_queries,
         )
         config = {"samples_per_dataset": {"test_resume": 3}, "base_seed": 1234}
         patterns = [(PatternID.GOVERNED_WORKFLOW, GovernedWorkflow)]
