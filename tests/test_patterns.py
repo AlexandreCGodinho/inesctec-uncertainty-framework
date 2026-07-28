@@ -254,10 +254,10 @@ def test_p4_deliberation():
 
 
 def test_p4_agents_are_symmetric():
-    from src.patterns.p4_deliberation import AGENT_PROMPT
-    p1 = AGENT_PROMPT.format(agent_id=0, context="ctx", query="q")
-    p2 = AGENT_PROMPT.format(agent_id=1, context="ctx", query="q")
-    p3 = AGENT_PROMPT.format(agent_id=2, context="ctx", query="q")
+    from src.patterns.p4_deliberation import AGENT_PROMPT_WITH_CONTEXT
+    p1 = AGENT_PROMPT_WITH_CONTEXT.format(agent_id=0, context="ctx", query="q")
+    p2 = AGENT_PROMPT_WITH_CONTEXT.format(agent_id=1, context="ctx", query="q")
+    p3 = AGENT_PROMPT_WITH_CONTEXT.format(agent_id=2, context="ctx", query="q")
     base1 = p1.replace("Agent 0", "Agent {id}")
     base2 = p2.replace("Agent 1", "Agent {id}")
     base3 = p3.replace("Agent 2", "Agent {id}")

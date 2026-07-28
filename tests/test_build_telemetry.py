@@ -22,35 +22,35 @@ class TestBuildTelemetryPattern1:
         result = GovernedWorkflow(MockLLMClient()).run(
             _make_state(PatternID.GOVERNED_WORKFLOW)
         )
-        t = build_telemetry(result)
+        t = build_telemetry(result, MockLLMClient())
         assert t.u_C is None
 
     def test_u_R_is_none(self):
         result = GovernedWorkflow(MockLLMClient()).run(
             _make_state(PatternID.GOVERNED_WORKFLOW)
         )
-        t = build_telemetry(result)
+        t = build_telemetry(result, MockLLMClient())
         assert t.u_R is None
 
     def test_u_L_is_not_none(self):
         result = GovernedWorkflow(MockLLMClient()).run(
             _make_state(PatternID.GOVERNED_WORKFLOW)
         )
-        t = build_telemetry(result)
+        t = build_telemetry(result, MockLLMClient())
         assert t.u_L is not None
 
     def test_U_surface_is_not_none(self):
         result = GovernedWorkflow(MockLLMClient()).run(
             _make_state(PatternID.GOVERNED_WORKFLOW)
         )
-        t = build_telemetry(result)
+        t = build_telemetry(result, MockLLMClient())
         assert t.U_surface is not None
 
     def test_U_composite_is_not_none(self):
         result = GovernedWorkflow(MockLLMClient()).run(
             _make_state(PatternID.GOVERNED_WORKFLOW)
         )
-        t = build_telemetry(result)
+        t = build_telemetry(result, MockLLMClient())
         assert t.U_composite is not None
 
 
@@ -59,28 +59,28 @@ class TestBuildTelemetryPattern2:
         result = RoleSeparatedPipeline(MockLLMClient(), max_revisions=1).run(
             _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
         )
-        t = build_telemetry(result)
+        t = build_telemetry(result, MockLLMClient())
         assert t.u_C is None
 
     def test_u_R_is_not_none_with_revisions(self):
         result = RoleSeparatedPipeline(MockLLMClient(), max_revisions=1).run(
             _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
         )
-        t = build_telemetry(result)
+        t = build_telemetry(result, MockLLMClient())
         assert t.u_R is not None
 
     def test_U_surface_is_not_none(self):
         result = RoleSeparatedPipeline(MockLLMClient(), max_revisions=1).run(
             _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
         )
-        t = build_telemetry(result)
+        t = build_telemetry(result, MockLLMClient())
         assert t.U_surface is not None
 
     def test_U_composite_is_not_none(self):
         result = RoleSeparatedPipeline(MockLLMClient(), max_revisions=1).run(
             _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
         )
-        t = build_telemetry(result)
+        t = build_telemetry(result, MockLLMClient())
         assert t.U_composite is not None
 
 
@@ -90,14 +90,14 @@ class TestBuildTelemetryTruncation:
         state.calls.append(
             LLMCall(agent_role="test", prompt="", response_text="", truncated=True)
         )
-        t = build_telemetry(state)
+        t = build_telemetry(state, MockLLMClient())
         assert t.truncation_flag is True
 
     def test_truncation_flag_false_when_no_truncation(self):
         result = GovernedWorkflow(MockLLMClient()).run(
             _make_state(PatternID.GOVERNED_WORKFLOW)
         )
-        t = build_telemetry(result)
+        t = build_telemetry(result, MockLLMClient())
         assert t.truncation_flag is False
 
 
@@ -105,9 +105,9 @@ def test_u_P_value_for_pattern1():
     result = GovernedWorkflow(MockLLMClient()).run(
         _make_state(PatternID.GOVERNED_WORKFLOW)
     )
-    t = build_telemetry(result)
+    t = build_telemetry(result, MockLLMClient())
     assert t.u_P is not None
-    assert t.u_P == 0.0  # MockLLMClient logprobs + u_F=0.0 (no judge)
+    assert t.u_P == pytest.approx(0.4921716224507743)  # Valor agregado pós-Hard Fail
 
 
 def test_u_P_with_none_logprobs():
@@ -117,7 +117,7 @@ def test_u_P_with_none_logprobs():
                 logprobs=None)
     )
     state.final_answer = "test"
-    t = build_telemetry(state)
+    t = build_telemetry(state, MockLLMClient())
     assert t.u_P == 0.0
 
 
@@ -125,7 +125,7 @@ def test_u_R_is_none_with_single_round():
     result = RoleSeparatedPipeline(MockLLMClient(), max_revisions=0).run(
         _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
     )
-    t = build_telemetry(result)
+    t = build_telemetry(result, MockLLMClient())
     assert t.u_R is None
 
 
@@ -148,7 +148,7 @@ def test_u_R_uses_analyst_traces_not_reviewer_or_researcher():
         agent_role="reviewer", round_index=1, prompt="",
         response_text="VERDICT: approved REVIEWER_FINAL_DELTA xyz"))
     state.final_answer = "ANALYST_REVISED_GAMMA"
-    t = build_telemetry(state)
+    t = build_telemetry(state, MockLLMClient())
     expected = compute_u_R(["ANALYST_DRAFT_ALPHA", "ANALYST_REVISED_GAMMA"])
     assert t.u_R == pytest.approx(expected)
 
@@ -164,7 +164,7 @@ def test_truncation_flag_true_from_early_call():
                 truncated=False)
     )
     state.final_answer = "final"
-    t = build_telemetry(state)
+    t = build_telemetry(state, MockLLMClient())
     assert t.truncation_flag is True
 
 
@@ -183,7 +183,7 @@ def test_pattern3_logprobs_from_last_round():
                 response_text="revised", logprobs=[-0.2]),
     ]
     state.final_answer = "revised"
-    t = build_telemetry(state)
+    t = build_telemetry(state, MockLLMClient())
     assert t.u_P is not None
 
 
@@ -198,7 +198,7 @@ def test_pattern3_u_R_computed_with_multiple_rounds():
                 response_text="Paris is the capital of France."),
     ]
     state.final_answer = "Paris is the capital of France."
-    t = build_telemetry(state)
+    t = build_telemetry(state, MockLLMClient())
     assert t.u_R is not None
 
 
@@ -230,7 +230,7 @@ def test_pattern4_u_C_computed_from_symmetric_agents():
                 response_text="VERDICT: approved. Consensus reached."),
     ]
     state.final_answer = "Consensus reached."
-    t = build_telemetry(state)
+    t = build_telemetry(state, MockLLMClient())
     assert t.u_C is not None
     expected = compute_u_C(["Answer A1", "Answer B1", "Answer C1"])
     assert t.u_C == pytest.approx(expected)
@@ -250,10 +250,10 @@ def test_pattern4_u_P_uses_last_round_analyst_logprobs():
                 response_text="VERDICT: approved."),
     ]
     state.final_answer = "approved"
-    t = build_telemetry(state)
+    t = build_telemetry(state, MockLLMClient())
     assert t.u_P is not None
     averaged = [sum(vals) / len(vals) for vals in zip(*[[-0.5, -0.3], [-0.1, -0.2]])]
-    expected = compute_u_P(averaged, compute_u_F("approved", state.reference))
+    expected = compute_u_P(averaged, compute_u_F("approved", state.reference, MockLLMClient()))
     assert t.u_P == pytest.approx(expected)
 
 
@@ -271,7 +271,7 @@ def test_pattern4_u_R_on_immediate_consensus():
                 response_text="VERDICT: approved."),
     ]
     state.final_answer = "approved"
-    t = build_telemetry(state)
+    t = build_telemetry(state, MockLLMClient())
     assert t.u_R == 0.0
 
 
@@ -294,7 +294,7 @@ def test_pattern4_u_R_on_multi_round_refinement():
                 response_text="VERDICT: approved. All good."),
     ]
     state.final_answer = "All good."
-    t = build_telemetry(state)
+    t = build_telemetry(state, MockLLMClient())
     assert t.u_R is not None
     assert t.u_R > 0.0
     expected = compute_u_R([

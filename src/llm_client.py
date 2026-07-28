@@ -168,9 +168,13 @@ class MockLLMClient(LLMClient):
 
     def call(self, agent_role, prompt, round_index=0, want_logprobs=False,
              timeout_seconds=None):
+        text = f"[mock:{agent_role}:r{round_index}]"
+        if "JSON" in prompt:
+            text = '{"mock_claim": 1.0}'
+        
         return LLMCall(agent_role=agent_role, round_index=round_index,
                        prompt=prompt,
-                       response_text=f"[mock:{agent_role}:r{round_index}]",
+                       response_text=text,
                        logprobs=[-0.1, -0.2] if want_logprobs else None,
                        latency_ms=0.1, tokens_prompt=10, tokens_completion=5)
 
