@@ -187,3 +187,11 @@ The strict constraint and the `CONTEXT:` block are removed, replaced exactly by:
 > *"Answer the request below using your own knowledge."*
 
 This change was authorized jointly by AF and AG and was implemented across all four pattern modules before any report-run results were seen.
+
+## 11. Amendment 3 (28/07) - Invalidation of Historical u_F and u_P Telemetry
+
+A structural fault in `build_telemetry.py` historically caused `u_F` to return `0.0` silently during metric evaluation. Because `u_P` (Plausibility Paradox term) computationally depends on `u_F`, this failure artificially skewed both metrics across all early testing phases.
+
+Effective immediately (post-PR #28):
+1. **Invalidation:** All historical `u_F` and `u_P` values recorded in the `telemetry/` and `data/` directories prior to this amendment are formally invalidated and must not be used in the final analysis.
+2. **Hard Fail Enforcement:** The telemetry engine has been patched to raise a strict `ValueError` if the evaluator judge client is missing. Silent fallback values (`0.0`) are permanently banned.
