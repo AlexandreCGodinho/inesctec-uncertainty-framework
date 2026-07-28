@@ -64,7 +64,7 @@ def _judge_claims_batch(
         f"JSON:"
     )
     for attempt in range(2):
-        response = llm_judge_callable("judge", prompt)
+        response = llm_judge_callable.call("judge", prompt)
         try:
             raw = response.response_text.strip()
             if raw.startswith("```json"):
