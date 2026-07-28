@@ -51,10 +51,19 @@ def _judge_claims_batch(
     claims: list[str], reference: str, llm_judge_callable
 ) -> dict:
     claims_text = "\n".join(f"{i}: {c}" for i, c in enumerate(claims))
-    prompt = (
-        f"Reference: {reference}\n\n"
-        f"Claims:\n{claims_text}\n\n"
-        f"Score each claim against the reference:\n"
+    if reference.strip():
+        prompt = (
+            f"Reference: {reference}\n\n"
+            f"Claims:\n{claims_text}\n\n"
+            f"Score each claim against the reference:\n"
+        )
+    else:
+        prompt = (
+            f"Claims:\n{claims_text}\n\n"
+            f"Assess each claim's factual accuracy using your own knowledge:\n"
+        )
+        
+    prompt += (
         f"  -1 = contradicted\n"
         f"   0 = not enough information\n"
         f"  +0.5 = partially supported\n"
