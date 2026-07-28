@@ -195,3 +195,7 @@ A structural fault in `build_telemetry.py` historically caused `u_F` to return `
 Effective immediately (post-PR #28):
 1. **Invalidation:** All historical `u_F` and `u_P` values recorded in the `telemetry/` and `data/` directories prior to this amendment are formally invalidated and must not be used in the final analysis.
 2. **Hard Fail Enforcement:** The telemetry engine has been patched to raise a strict `ValueError` if the evaluator judge client is missing. Silent fallback values (`0.0`) are permanently banned.
+
+## 12. Amendment 4 (28/07) - Conditional Prompt Framing for Evaluator Judge
+
+Following the logic of Amendment 2, an identical structural adaptation has been implemented for the Evaluator Judge. When evaluating claims for datasets lacking a reference context (PopQA, IFEval), the Judge will now be explicitly instructed to assess factual accuracy using its own knowledge. This conditional framing prevents the parser from choking on an impossible task and guarantees robust JSON generation, mitigating evaluation failures in empty contexts.

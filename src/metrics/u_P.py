@@ -1,7 +1,9 @@
 import numpy as np
 
 
-def compute_u_P(logprobs: list[float] | None, u_F: float) -> float:
+def compute_u_P(logprobs: list[float] | None, u_F: float | None) -> float | None:
+    if u_F is None:
+        return None
     if logprobs is None:
         return 0.0
     if len(logprobs) == 0:
