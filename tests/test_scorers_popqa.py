@@ -20,9 +20,9 @@ class TestPopqaScorer:
         result = self._score("Paris!", "Paris")
         assert result["match"] == 1.0
 
-    def test_headline_fails_on_word_subset(self):
+    def test_substring_word_in_context(self):
         result = self._score("It is Paris", "Paris")
-        assert result["match"] == 0.0
+        assert result["match"] == 1.0
 
     def test_headline_fails_on_alias(self):
         result = self._score("USA", "United States of America")
@@ -67,6 +67,36 @@ class TestPopqaScorer:
         r1 = self._score("Paris", "paris")
         r2 = self._score("Paris", "paris")
         assert r1 == r2
+
+
+class TestPopqaScorerAliasRule:
+    """Substring alias rule: any alias must be a case-insensitive substring of the prediction."""
+
+    def _score_with_aliases(self, prediction: str, aliases: list[str]) -> dict:
+        return PopqaScorer().score(
+            record={"final_answer": prediction},
+            reference={"answer": aliases[0], "possible_answers": str(aliases)},
+        )
+
+    def test_substring_extra_words(self):
+        result = self._score_with_aliases("He is a talent manager.", ["talent manager"])
+        assert result["match"] == 1.0
+
+    def test_substring_scrambled_words(self):
+        result = self._score_with_aliases("manager talent", ["talent manager"])
+        assert result["match"] == 0.0
+
+    def test_substring_plural_contains_singular(self):
+        result = self._score_with_aliases("cartoonists", ["cartoonist"])
+        assert result["match"] == 1.0
+
+    def test_substring_manager_acquisition(self):
+        result = self._score_with_aliases("Manager of talent acquisition", ["talent manager"])
+        assert result["match"] == 0.0
+
+    def test_substring_multiple_aliases(self):
+        result = self._score_with_aliases("He became a political leader", ["politician", "political leader"])
+        assert result["match"] == 1.0
 
 
 class TestExtractAnswer:
@@ -141,7 +171,7 @@ class TestExtractAnswer:
             reference={"answer": "Paris"},
         )
         assert result["match"] == 1.0
-        assert result["score_popqa_raw"] == 0.0
+        assert result["score_popqa_raw"] == 1.0
 
     def test_extraction_answer_on_next_line(self):
         result = PopqaScorer().score(
@@ -149,7 +179,7 @@ class TestExtractAnswer:
             reference={"answer": "Paris"},
         )
         assert result["match"] == 1.0
-        assert result["score_popqa_raw"] == 0.0
+        assert result["score_popqa_raw"] == 1.0
 
     def test_extraction_answer_on_next_line_no_space(self):
         result = PopqaScorer().score(
