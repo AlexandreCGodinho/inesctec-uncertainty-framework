@@ -83,9 +83,9 @@ In Pattern 4 (Multi-Perspective Deliberation), concurrent agents maintain extens
 
 Mandatory controls, enforced by the orchestrator:
 
-1. **Per-agent context ceiling** in Pattern 4 (value set during Phase 2 profiling; initial ceiling 8k tokens per agent).
+1. **Per-agent context ceiling enforcement** in Pattern 4. The Python orchestrator natively delegates the context ceiling to the vLLM engine (`--max-model-len 8192`). If cumulative dialogue exceeds this physical limit, the engine strictly rejects the prompt (HTTP 400), and the orchestrator aborts the specific query, ensuring zero silent truncation.
 2. **Truncation event logging**: every run records whether any truncation or cache eviction occurred.
-3. **Exclusion rule**: runs with truncation events are flagged and excluded from the main analysis (reported separately in an appendix).
+3. **Exclusion rule (Paired Symmetry)**: when the pipeline manifest identifies a query aborted in Pattern 4 due to `context_exceeded` (where `actual < expected`), that specific query ID is strictly excluded from the analysis across all four patterns (P1, P2, P3, and P4) to guarantee paired symmetry.
 4. **Oversized Document Protection**: queries structurally exceeding ~6800 tokens (estimated via the fast heuristic `len(query_text) / 3.5 > 6800`) are blocked prior to prompt generation. They are excluded and securely logged as `oversized_ids` in the manifest to guarantee strict compliance with the 8192 native window without silent truncation.
 
 ### 4.3 Ensemble Size for Pattern 4 (Locked Parameter: K = 3)
@@ -203,3 +203,9 @@ Following the logic of Amendment 2, an identical structural adaptation has been 
 ## 13. Amendment 5 (29/07) - Sample Limits and Tag v6 Migration
 
 Following the successful validation of the testing environment (Micro-Smoke Run v5), the artificial sample limit (`samples_per_dataset: 2`) has been removed and expanded to `150` for the official production run. To ensure immutability and strict auditing compliance for the final execution, the Colab initialization protocol now rigidly targets the `report-run-freeze-v6` tag.
+
+## 14. Amendment 6 (29/07) - Seed Variance and Supplementary Passes
+
+To measure the external variance of Pattern 4 (which utilizes an ensemble K=3), independent full-run passes are required. The orchestration logic follows a deterministic parameterization constraint:
+1. **Run Seed Derivation**: A given run pass dictated by `run seed r` will deterministically generate the three internal agent seeds as `[r, r+4444, r+7778]`.
+2. **Dataset Identity**: The `sampling_seed` remains statically frozen at `42` across all supplementary passes to guarantee that the generated ensemble variance is measured against the exact same dataset queries.
