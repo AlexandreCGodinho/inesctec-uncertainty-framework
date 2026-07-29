@@ -7,7 +7,7 @@ sampling_seed: 42
 request_timeout_seconds: 60
 pattern4_num_agents: 3               # locked in doc 02, Section 4.3; do not change
 pattern4_agent_seeds: [1234, 5678, 9012]   # one seed per symmetric agent
-pattern4_context_ceiling_tokens: 8000       # doc 02, Section 4.2; tuned in Phase 2
+
 samples_per_dataset:                 # provisional N=150
   popqa: 150
   livebench: 150
