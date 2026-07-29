@@ -209,3 +209,7 @@ Following the successful validation of the testing environment (Micro-Smoke Run 
 To measure the external variance of Pattern 4 (which utilizes an ensemble K=3), independent full-run passes are required. The orchestration logic follows a deterministic parameterization constraint:
 1. **Run Seed Derivation**: A given run pass dictated by `run seed r` will deterministically generate the three internal agent seeds as `[r, r+4444, r+7778]`.
 2. **Dataset Identity**: The `sampling_seed` remains statically frozen at `42` across all supplementary passes to guarantee that the generated ensemble variance is measured against the exact same dataset queries.
+
+## 15. Amendment 7: Minor fixes and Tag v8 Release (Pre-Run)
+Following the implementation of Amendment 6 (Supplementary Passes), minor aesthetic and structural redundancies were found in the Colab Jupyter Notebook (duplicate markdown warnings and duplicate execution cells). 
+In strict adherence to the immutable tags principle for reproducibility, the `report-run-freeze-v7` tag is formally **deprecated**. All code, including the notebook, is advanced to `report-run-freeze-v8`, which serves as the definitive lock for the production run.
