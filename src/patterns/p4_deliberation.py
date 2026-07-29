@@ -64,7 +64,6 @@ class MultiPerspectiveDeliberation(Orchestrator):
             
         seeds = config.get('pattern4_agent_seeds', [1234, 5678, 9012])
         num_agents = self.num_agents if self.num_agents is not None else config.get('pattern4_num_agents', 3)
-        context_ceiling = config.get('pattern4_context_ceiling_tokens', 8000)
         max_rounds = config.get('pattern4_max_rounds', 2)
         
         original_seed = self.client.seed
