@@ -57,12 +57,10 @@ class MultiPerspectiveDeliberation(Orchestrator):
         self.num_agents = num_agents
 
     def run(self, state: RunState) -> RunState:
-        # Load config
         config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'experiment.yaml')
         with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
             
-        seeds = config.get('pattern4_agent_seeds', [1234, 5678, 9012])
         num_agents = self.num_agents if self.num_agents is not None else config.get('pattern4_num_agents', 3)
         max_rounds = config.get('pattern4_max_rounds', 2)
         
@@ -73,7 +71,7 @@ class MultiPerspectiveDeliberation(Orchestrator):
         for r in range(max_rounds):
             # 1. Parallel Generation by Symmetric Agents
             for i in range(num_agents):
-                seed = seeds[i] if i < len(seeds) else original_seed + i
+                seed = original_seed * 100 + i
                 self.client.seed = seed
                 
                 if r == 0:

@@ -66,7 +66,10 @@ if __name__ == "__main__":
     run_seeds = [2345, 3456]
 
     for r in run_seeds:
-        # 1. Update config mathematically
+        # 1. Pass the run seed directly to the LLMClient constructor
+        client = LLMClient(seed=r)
+
+        # Update config mathematically (still needed for logging/runner internal state)
         config["base_seed"] = r
         config["pattern4_agent_seeds"] = [r, r + 4444, r + 7778]
         # Ensure dataset extraction identity is preserved
