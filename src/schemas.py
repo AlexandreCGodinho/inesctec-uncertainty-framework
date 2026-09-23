@@ -37,6 +37,7 @@ class RunState(BaseModel):
     seed: int = 0
     model_name: str = ""
     provider: str = ""
+    agent_seeds: list[int] | None = None
     final_answer: str | None = None
     started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -61,6 +62,7 @@ class Telemetry(BaseModel):
     query_id: str = ""
     dataset: str = ""                     # "popqa" | "livebench" | "finqa" | "ifeval"
     seed: int = 0
+    agent_seeds: list[int] | None = None  # audits P4 sub-agent seeds
     final_answer: str | None = None
     termination_reason: str | None = None
     tokens_prompt: int = 0
