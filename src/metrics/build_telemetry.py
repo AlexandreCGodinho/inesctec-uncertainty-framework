@@ -157,6 +157,7 @@ def build_telemetry(state: RunState, client: Any = None) -> Telemetry:
         query_id=state.query_id,
         dataset=state.dataset,
         seed=state.seed,
+        agent_seeds=state.agent_seeds,
         model_name=state.model_name,
         provider=state.provider,
         final_answer=state.final_answer,

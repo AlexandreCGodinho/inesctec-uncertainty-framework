@@ -6,7 +6,7 @@ base_seed: 1234
 sampling_seed: 42
 request_timeout_seconds: 60
 pattern4_num_agents: 3               # locked in doc 02, Section 4.3; do not change
-pattern4_agent_seeds: [1234, 5678, 9012]   # one seed per symmetric agent
+pattern4_agent_seed_offsets: [0, 4444, 7778] # offsets from run_seed (Amendment 6); yields [1234, 5678, 9012] for base run
 
 samples_per_dataset:                 # provisional N=150
   popqa: 150

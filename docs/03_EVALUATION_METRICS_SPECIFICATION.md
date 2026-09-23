@@ -143,8 +143,10 @@ Consequences for analysis:
 ## 6. Accuracy Reporting Specification
 
 1) Primary output is a per-item score table, not percentages. One row per (query_id, pattern, seed), with: dataset, official metric value(s), termination reason, tokens, latency.
-In the primary key, seed is the run seed. Pattern 4's K = 3 agent seeds are derived deterministically from the run seed (e.g., agent_seed_i = run_seed * 100 + i; the exact rule is Pedro's implementation choice, but it must be deterministic and documented) and never appear in the key. Pattern 4 runs with 3 run seeds; Patterns 1-3 with a single run seed.
+In the primary key, seed is the run seed. Pattern 4's K = 3 agent seeds are derived deterministically from the run seed using the configuration offsets `pattern4_agent_seed_offsets: [0, 4444, 7778]` per Amendment 6 of `02_EXPERIMENTAL_DESIGN.md` (namely, agent seeds $[r, r+4444, r+7778]$ for run seed $r$), which formally supersedes the earlier illustrative example (`run_seed * 100 + i`). Agent seeds are recorded in telemetry for auditability and never appear in the primary key. Pattern 4 runs with 3 run seeds; Patterns 1-3 with a single run seed.
 All downstream analysis (pattern comparison, U(x) join, cost normalization) reads from this table. The harness adapter from the bridge task produces it. Correctness scores use accuracy semantics (1 = correct); uncertainty components use u-semantics (1 = maximally uncertain); the prefix identifies the family.
+
+> **Revision Note (23/09):** The illustrative rule `agent_seed_i = run_seed * 100 + i` was formally superseded by Amendment 6 (29/07, `02_EXPERIMENTAL_DESIGN.md`), which established the deterministic parameterization `[r, r+4444, r+7778]`. This maintains mathematical consistency with the baseline run ($r = 1234 \rightarrow [1234, 5678, 9012]$) and supplementary passes ($r = 2345 \rightarrow [2345, 6789, 10123]$; $r = 3456 \rightarrow [3456, 7900, 11234]$).
 
 2) Accuracy is reported per (pattern x dataset), using each benchmark's official metric, named explicitly. PopQA: "alias-match accuracy". FinQA: "execution accuracy" (program accuracy reported separately). IFEval: all four official variants, with prompt-level strict as the headline. LiveBench: official per-category scores, benchmark version pinned and recorded. A generic "Accuracy (%)" label is not used anywhere.
 
