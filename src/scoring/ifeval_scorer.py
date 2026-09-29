@@ -1,5 +1,6 @@
 import re
 
+from src.scoring.answer_span import extract_answer_span
 from src.scoring.base import Scorer
 
 
@@ -7,7 +8,8 @@ class IfevalScorer(Scorer):
     def score(self, record: dict, reference: dict) -> dict:
         response = record.get("final_answer", "")
         prompt = reference.get("prompt", reference.get("query", ""))
-        return _score_ifeval_inner(prompt, response)
+        extracted_text, _ = extract_answer_span(response)
+        return _score_ifeval_inner(prompt, extracted_text)
 
 
 def _score_ifeval_inner(prompt: str, response: str) -> dict[str, float]:
