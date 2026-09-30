@@ -93,12 +93,12 @@ class TestFinqaNumericScorer:
         result = finqa_numeric_scorer(record, reference)
         assert result["match"] == 0.0
 
-    def test_amt_2003_omits_percent(self):
-        """AMT/2003: 0.33333 vs 33.3% — model omits the %"""
+    def test_amt_2003_percent_match(self):
+        """AMT/2003: 0.33333 vs 33.3% -> model answer includes % sign, match is correct per Álvaro ruling."""
         record = {"final_answer": "33.3%"}
         reference = {"exe_ans": "0.33333"}
         result = finqa_numeric_scorer(record, reference)
-        assert result["match"] == 0.0, f"Expected match 0.0, got {result}"
+        assert result["match"] == 1.0, f"Expected match 1.0, got {result}"
 
     def test_jkhy_2019_yes_no(self):
         """JKHY/2019: "no" vs "no" — yes/no exact match"""
