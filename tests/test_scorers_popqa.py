@@ -87,8 +87,9 @@ class TestPopqaScorerAliasRule:
         assert result["match"] == 0.0
 
     def test_substring_plural_contains_singular(self):
+        """Singular alias inside plural word should NOT match (word-boundary lookaround)."""
         result = self._score_with_aliases("cartoonists", ["cartoonist"])
-        assert result["match"] == 1.0
+        assert result["match"] == 0.0
 
     def test_substring_manager_acquisition(self):
         result = self._score_with_aliases("Manager of talent acquisition", ["talent manager"])

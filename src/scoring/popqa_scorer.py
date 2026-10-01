@@ -85,12 +85,26 @@ def _normalize(text: str) -> list[str]:
 
 
 def _is_alias_match(aliases: list[str], prediction: str) -> bool:
+    """Check if any alias matches in prediction using word-boundary lookarounds.
+
+    Uses r"(?<!\\w)alias(?!\\w)" to avoid inside-word matches (e.g., "US" in "USA").
+    """
     if not aliases:
         return True
     if not prediction:
         return False
+    # Filter out empty aliases
+    valid_aliases = [a for a in aliases if a and a.strip()]
+    if not valid_aliases:
+        return True  # vacuous truth: no valid aliases to match against
     pred_lower = prediction.lower()
-    return any(a.lower() in pred_lower for a in aliases)
+    for alias in valid_aliases:
+        alias_lower = alias.lower()
+        # Use lookarounds to match only at word boundaries, not inside words
+        pattern = r"(?<!\w)" + re.escape(alias_lower) + r"(?!\w)"
+        if re.search(pattern, pred_lower):
+            return True
+    return False
 
 
 def _jaccard(a: set, b: set) -> float:
