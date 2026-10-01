@@ -60,8 +60,8 @@ class TestExtractAnswerSpan:
         assert span == ""
 
     def test_only_verdict_line(self):
-        """Only VERDICT line, no other text."""
+        """Only VERDICT line, no other text -> approved_fallback (no before/after text)."""
         text = "VERDICT: approved"
         span, cat = extract_answer_span(text)
-        assert cat == "empty_approved"
+        assert cat == "approved_fallback"
         assert span == ""
