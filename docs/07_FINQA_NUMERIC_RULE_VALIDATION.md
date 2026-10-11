@@ -12,9 +12,16 @@
 2. **Normalization** — strip `$` and thousands separators. `%` → `/100`.
    `million`/`billion`/`thousand` → ×1e6/1e9/1e3 as base.
 3. **Scale ambiguity (table units)** — gold `exe_ans` is in raw table units, which
-   vary per table (raw / thousands / millions). Candidates = `{base, base×1e-3,
-   base×1e-6}`. Plain numbers with no unit word are NOT scaled (avoids false
-   positives such as 1,056,000 → 1056).
+   vary per table (raw / thousands / millions). When a unit word
+   (`thousand`/`million`/`billion`) is present, candidates scale **bidirectionally**:
+   `{base, base×1e-3, base×1e-6, base×1e+3, base×1e+6}`. This covers both
+   directions of mismatch:
+   - **Downward** (model says "33.458 million", table in raw units → 33458):
+     `33.458 × 1e+3 = 33458` → match.
+   - **Upward** (model says "40.264 million", table in raw units → 40264):
+     `40.264 × 1e+3 = 40264` → match.
+   Plain numbers with no unit word are NOT scaled (avoids false positives such
+   as 1,056,000 → 1056).
 4. **Comparison** — match if any candidate is within `rtol=0.005` (`math.isclose`,
    `atol=1e-6`) of `exe_ans`. This covers rounding (NKE 81.37 → 0.81372) and
    %-vs-decimal (81.37% → 0.8137).
@@ -64,8 +71,8 @@ clean final number — flagged for the report discussion, not a parser artifact.
 ## 4. Open items for sign-off
 
 1. Confirm `rtol=0.005` tolerance.
-2. Confirm scale-candidate set `{base, base×1e-3, base×1e-6}` (only when a unit
-   word is present).
+2. Confirm scale-candidate set `{base, base×1e-3, base×1e-6, base×1e+3, base×1e+6}`
+   (bidirectional, only when a unit word is present).
 3. Confirm yes/no handled as exact token match.
 4. Confirm using `exe_ans` (not `answer`) as gold even when they disagree
    (AMT/2014 33458 vs 63458).

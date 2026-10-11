@@ -48,7 +48,7 @@ ABMD/2012/page_79.pdf-2,B,True,,,,True,answer says cannot determine,,,True,answe
 ABMD/2012/page_79.pdf-2,C,True,True,1476.3,thousand $,False,,1476.3,thousand,False,
 ABMD/2012/page_79.pdf-2,D,True,True,4218,$,False,,4218,$,False,
 ADI/2010/page_80.pdf-3,A,True,True,9.40,%,False,,9.4,%,False,
-ADI/2010/page_80.pdf-3,B,True,,,,True,answer says cannot determine,,,True,answer says cannot determine
+ADI/2010/page_80.pdf-3,B,False,,9.40,%,False,,,,True,answer says cannot determine
 ADI/2010/page_80.pdf-3,C,True,True,9.40,%,False,,9.4,%,False,
 ADI/2010/page_80.pdf-3,D,True,,,,True,answer says cannot determine,,,True,answer says cannot determine
 AES/2001/page_33.pdf-2,A,True,True,12.30,$,False,,12.30,$,False,
@@ -73,8 +73,8 @@ AMT/2006/page_104.pdf-3,C,True,True,81.30,%,False,,81.3,%,False,
 AMT/2006/page_104.pdf-3,D,True,True,18.73,%,False,,18.73,%,False,
 AMT/2006/page_113.pdf-3,A,False,False,-364,$,False,,-364,,False,
 AMT/2006/page_113.pdf-3,B,True,True,1949,thousand $,False,,1949,thousand,False,
-AMT/2006/page_113.pdf-3,C,False,,,,True,answer says cannot determine,,,True,no number found
-AMT/2006/page_113.pdf-3,D,False,,,,True,multiple conflicting numbers,,,True,format too ambiguous
+AMT/2006/page_113.pdf-3,C,False,,,,True,needs_revision,,,True,no number found
+AMT/2006/page_113.pdf-3,D,False,,,,True,more than a result,,,True,format too ambiguous
 AMT/2008/page_107.pdf-4,A,True,True,-13636,$,False,,-13636,$,False,
 AMT/2008/page_107.pdf-4,B,True,True,13636,thousand $,False,,13636,thousand,False,
 AMT/2008/page_107.pdf-4,C,False,False,-13636,$,False,,-13636,,False,
