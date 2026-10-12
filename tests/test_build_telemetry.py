@@ -121,12 +121,25 @@ def test_u_P_with_none_logprobs():
     assert t.u_P == 0.0
 
 
-def test_u_R_is_none_with_single_round():
+def test_u_R_is_zero_with_single_round():
     result = RoleSeparatedPipeline(MockLLMClient(), max_revisions=0).run(
         _make_state(PatternID.ROLE_SEPARATED_PIPELINE)
     )
     t = build_telemetry(result, MockLLMClient())
-    assert t.u_R is None
+    assert t.u_R == 0.0
+
+
+def test_pattern3_u_R_is_zero_on_immediate_approval():
+    state = _make_state(PatternID.REFLEXIVE_SINGLE_AGENT)
+    state.calls = [
+        LLMCall(agent_role="solo_reflexive", round_index=0, prompt="",
+                response_text="Initial perfect draft."),
+        LLMCall(agent_role="solo_reflexive", round_index=1, prompt="",
+                response_text="VERDICT: approved. No changes needed."),
+    ]
+    state.final_answer = "Initial perfect draft."
+    t = build_telemetry(state, MockLLMClient())
+    assert t.u_R == 0.0
 
 
 def test_u_R_uses_analyst_traces_not_reviewer_or_researcher():

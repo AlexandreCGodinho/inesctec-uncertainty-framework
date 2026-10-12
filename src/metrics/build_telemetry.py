@@ -101,9 +101,12 @@ def _extract_last_round_analyst_logprobs(state: RunState) -> list[list[float]]:
 
 
 def build_telemetry(state: RunState, client: Any = None) -> Telemetry:
-    u_L = compute_u_L(state.final_answer or "")
+    u_L = compute_u_L(
+        final_answer=state.final_answer or "",
+        dataset=state.dataset,
+        query=state.query,
+    )
 
-    
     judge_parse_error = False
     try:
         u_F = compute_u_F(state.final_answer or "", state.reference, client)
@@ -121,10 +124,20 @@ def build_telemetry(state: RunState, client: Any = None) -> Telemetry:
 
     if state.pattern == PatternID.ROLE_SEPARATED_PIPELINE:
         traces = _extract_analyst_traces(state)
-        u_R = compute_u_R(traces) if len(traces) >= 2 else None
+        if len(traces) == 1:
+            u_R = 0.0  # Immediate consensus
+        elif len(traces) >= 2:
+            u_R = compute_u_R(traces)
+        else:
+            u_R = None
     elif state.pattern == PatternID.REFLEXIVE_SINGLE_AGENT:
         traces = _extract_reflexive_traces(state)
-        u_R = compute_u_R(traces) if len(traces) >= 2 else None
+        if len(traces) == 1:
+            u_R = 0.0  # Immediate consensus
+        elif len(traces) >= 2:
+            u_R = compute_u_R(traces)
+        else:
+            u_R = None
     elif state.pattern == PatternID.MULTI_PERSPECTIVE_DELIBERATION:
         judge_traces = _extract_judge_traces(state)
         if len(judge_traces) == 1:
@@ -147,7 +160,15 @@ def build_telemetry(state: RunState, client: Any = None) -> Telemetry:
     u_P = compute_u_P(logprobs, u_F)
 
     U_surface = compute_surface(u_L, u_F, u_P)
-    U_composite = compute_composite(pattern_id, u_L, u_F, u_P, u_R, u_C)
+    U_composite = compute_composite(
+        pattern_id=pattern_id,
+        u_L=u_L,
+        u_F=u_F,
+        u_P=u_P,
+        u_R=u_R,
+        u_C=u_C,
+        dataset=state.dataset,
+    )
 
     termination_reason = "truncated" if any(c.truncated for c in state.calls) else "completed"
 
