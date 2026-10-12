@@ -241,6 +241,23 @@ def test_p3_reflexive():
     assert len(result.calls) == 5
     assert result.final_answer is not None
 
+    # Draft (round 0) has logprobs
+    draft_calls = [c for c in result.calls if c.agent_role == "solo_reflexive" and c.round_index == 0]
+    assert len(draft_calls) == 1
+    assert draft_calls[0].logprobs is not None
+
+    # Revisions have logprobs
+    revision_calls = [c for c in result.calls if c.agent_role == "solo_reflexive" and c.round_index > 0 and "Revise" in c.prompt]
+    assert len(revision_calls) == 2
+    for rev in revision_calls:
+        assert rev.logprobs is not None
+
+    # Critiques do not have logprobs
+    critique_calls = [c for c in result.calls if c.agent_role == "solo_reflexive" and c.round_index > 0 and "VERDICT" in c.prompt]
+    assert len(critique_calls) == 2
+    for crit in critique_calls:
+        assert crit.logprobs is None
+
 
 def test_p4_deliberation():
     result = MultiPerspectiveDeliberation(MockLLMClient(), num_agents=3).run(

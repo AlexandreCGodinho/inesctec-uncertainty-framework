@@ -2,6 +2,7 @@ import pytest
 
 from src.metrics import (
     compute_u_L,
+    compute_u_F,
     compute_u_C,
     compute_u_R,
     compute_u_P,
@@ -130,3 +131,22 @@ def test_composite_renormalization_for_finqa_and_popqa():
     # P2: active without w_L: w_F (0.333), w_R (0.334) -> ~50/50 split
     c_p2 = compute_composite(pattern_id=2, u_L=None, u_F=0.2, u_P=None, u_R=0.4, u_C=None, dataset="finqa")
     assert c_p2 == pytest.approx(0.30, abs=1e-3)
+
+
+# ─── u_F Fallback & Threshold Tests ───────────────────────────────
+
+def test_u_F_returns_none_on_empty_text():
+    from src.llm_client import MockLLMClient
+    assert compute_u_F("", "Reference context", MockLLMClient()) is None
+    assert compute_u_F("   ", "Reference context", MockLLMClient()) is None
+
+
+def test_u_F_returns_none_on_text_below_threshold():
+    from src.llm_client import MockLLMClient
+    assert compute_u_F("Short text", "Reference", MockLLMClient()) is None
+
+
+def test_u_F_custom_threshold():
+    from src.llm_client import MockLLMClient
+    u = compute_u_F("Short text.", "Reference", MockLLMClient(), min_claim_chars=5)
+    assert u is not None

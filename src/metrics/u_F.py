@@ -1,26 +1,47 @@
 import json
+import os
+from pathlib import Path
+import yaml
+
 
 class JudgeParseError(Exception):
     pass
+
+
+def _get_min_claim_chars(explicit_min: int | None = None) -> int:
+    if explicit_min is not None:
+        return explicit_min
+    config_path = Path(__file__).resolve().parents[2] / "config" / "experiment.yaml"
+    if config_path.exists():
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                cfg = yaml.safe_load(f)
+            if isinstance(cfg, dict) and "uf_min_claim_chars" in cfg:
+                return int(cfg["uf_min_claim_chars"])
+        except Exception:
+            pass
+    return 20
+
 
 def compute_u_F(
     final_answer: str,
     reference: str,
     llm_judge_callable=None,
-) -> float:
+    min_claim_chars: int | None = None,
+) -> float | None:
     if not llm_judge_callable:
         raise ValueError("LLM Judge is missing. Factual evaluation aborted.")
-    claims = _split_claims(final_answer)
+    claims = _split_claims(final_answer, min_chars=min_claim_chars)
     if not claims:
-        return 0.5
-    
+        return None
+
     weights = [_estimate_severity(claim) for claim in claims]
     total_weight = sum(weights)
     if total_weight == 0:
-        return 0.5
+        return None
 
     scores_dict = _judge_claims_batch(claims, reference, llm_judge_callable)
-    
+
     scores = []
     for i in range(len(claims)):
         score = scores_dict.get(str(i), 0.0)
@@ -36,9 +57,10 @@ def compute_u_F(
     return (1.0 - mean_s) / 2.0
 
 
-def _split_claims(text: str) -> list[str]:
+def _split_claims(text: str, min_chars: int | None = None) -> list[str]:
+    threshold = _get_min_claim_chars(min_chars)
     sentences = text.replace("\n", " ").split(".")
-    return [s.strip() for s in sentences if len(s.strip()) > 20]
+    return [s.strip() for s in sentences if len(s.strip()) > threshold]
 
 
 def _estimate_severity(claim: str) -> float:
@@ -62,7 +84,7 @@ def _judge_claims_batch(
             f"Claims:\n{claims_text}\n\n"
             f"Assess each claim's factual accuracy using your own knowledge:\n"
         )
-        
+
     prompt += (
         f"  -1 = contradicted\n"
         f"   0 = not enough information\n"
