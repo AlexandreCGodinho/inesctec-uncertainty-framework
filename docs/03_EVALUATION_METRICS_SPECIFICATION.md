@@ -22,6 +22,11 @@ All components are normalized to [0, 1], where 0 indicates absolute certainty an
 * **Implementation:** programmatic verification of IFEval-style schema constraints.
 * **Formula:**
   $$u_L = 1 - \frac{\text{Passed Schema Constraints}}{\text{Total Constraints Applied}}$$
+* **Benchmark-specific rules (v11 Freeze):**
+  * **LiveBench:** Constraints are evaluated strictly against the candidate answer slot (markers such as `***...***`, `<solution>`, or bold delimiters), preventing narrative reasoning tokens from failing format checks.
+  * **IFEval:** Constraints are evaluated on the extracted answer span rather than conversational wrappers.
+  * **FinQA and PopQA:** Structural formatting constraints do not apply to these tasks ($u_L = \text{N/A}$, returned as `None`). In these benchmarks, active weights are dynamically renormalized across the remaining sensors (Section 3.2).
+
 
 ### 2.2 u_F (Factual Support)
 * **Concept:** factual deviation and hallucination relative to the reference context.
@@ -58,6 +63,7 @@ Pattern 4 runs with exactly **K = 3 agents**, and the agents must be **symmetric
   $$u_R = \frac{1}{M(K-1)} \sum_{i=1}^{M} \sum_{k=2}^{K} \text{EuclideanDistance}(E(r_i^{(k)}), E(r_i^{(k-1)}))$$
   normalized to [0, 1] by the maximum observed distance in the Phase 1 calibration set.
 * **Note (Consensus Effect):** In cases of immediate consensus, $u_R$ is zero, which structurally inflates the metric with zeros for easy queries. For analysis, the failure detector must be reported **with and without** the $u_R$ component. Furthermore, the existence of refinement loops must be extracted and treated as an independent binary signal (`refinement_triggered: Yes/No`).
+* **Standardized consensus semantics (v11 Freeze):** In iterative patterns (P2, P3, and P4), immediate consensus at round 1 (a single trace without revisions, $\Delta r = 0$) evaluates to $u_R = 0.0$. The value `None` is reserved strictly for Pattern 1 (structural absence of the iterative mechanism) or execution anomalies where zero traces were recorded.
 
 ### 2.5 u_P (Plausibility Paradox)
 * **Concept:** the gap between fluency and factual fidelity: highly fluent but factually wrong output, the primary driver of automation bias.
@@ -65,6 +71,7 @@ Pattern 4 runs with exactly **K = 3 agents**, and the agents must be **symmetric
 * **Formula:**
   $$u_P = \max(0,\; F - T), \qquad T = 1 - u_F$$
 * **Declared dependency:** u_P is by construction a function of u_F. This is intentional: the paradox is *defined* as fluency exceeding fidelity. The dependency is declared here and accounted for in Section 5; it must never be presented as an independent measurement of factuality.
+* **Deactivation status (v11 Freeze):** Deactivated across all patterns ($w_P = 0.00$). Baseline evaluation showed that self-perplexity in the Gemma 4-12B family exhibits severe calibration limits, with near-zero variance across correct and hallucinated answers. To avoid injecting noise into the composite score, $u_P$ is held inactive, and its weight is redistributed across active components.
 
 ---
 
@@ -87,14 +94,23 @@ When a pattern lacks the structural capacity to generate a component, that compo
 
 | Agentic Pattern | w_L | w_F | w_P | w_R | w_C | Active Sensors |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| 1. Governed Workflow | 0.33 | 0.33 | 0.34 | 0.00 | 0.00 | Surface only |
-| 2. Role-Separated Pipeline | 0.25 | 0.25 | 0.25 | 0.25 | 0.00 | Surface + revision drift |
-| 3. Reflexive Single Agent | 0.25 | 0.25 | 0.25 | 0.25 | 0.00 | Surface + self-critique drift |
-| 4. Multi-Perspective Delib. | 0.20 | 0.20 | 0.20 | 0.20 | 0.20 | Full spectrum |
+| 1. Governed Workflow | 0.50 | 0.50 | 0.00 | 0.00 | 0.00 | Surface only |
+| 2. Role-Separated Pipeline | 0.333 | 0.333 | 0.00 | 0.334 | 0.00 | Surface + revision drift |
+| 3. Reflexive Single Agent | 0.333 | 0.333 | 0.00 | 0.334 | 0.00 | Surface + self-critique drift |
+| 4. Multi-Perspective Delib. | 0.25 | 0.25 | 0.00 | 0.25 | 0.25 | Full spectrum |
 
 The orchestrator reads this matrix at runtime (`config/activation_matrix.yaml`) to compute U(x) per pattern.
 
 > **Change vs v1:** Pattern 2 (Role-Separated Pipeline) is no longer "full spectrum". Its w_C is zero, per the symmetry requirement of 2.3. Pattern numbering here follows `01_PROJECT_DESCRIPTION.md` Section 3.
+
+> **Revision Note (v11 Freeze, October 2026):**
+> Following the baseline audit, four core adjustments govern the evaluation pipeline:
+> 1. **Deactivation of u_P (w_P = 0.00):** Due to self-perplexity calibration limits on the Gemma 4-12B family, $u_P$ is deactivated across all patterns. Its allocated weight is redistributed among the active sensors ($w_L, w_F$ for P1; $w_L, w_F, w_R$ for P2 and P3; $w_L, w_F, w_R, w_C$ for P4) to maintain $\sum w_k = 1.0$.
+> 2. **Strict Abstention Policy (No Zero Imputation):** If any active component in the pattern activation matrix evaluates to `None` (such as when an LLM judge JSON response fails after retries, or an answer extraction aborts), the composite score $U(x)$ evaluates strictly to `None`. Zero imputation is rejected because it incorrectly rewarded evaluation failures with low uncertainty. The approximately 6.1% judge parse errors in baseline data are recorded as explicit operational abstentions.
+> 3. **Conditional u_L and Weight Renormalization:** LiveBench checks constraints only on the identified answer slot, and IFEval checks constraints on the extracted answer span. For FinQA and PopQA, formatting constraints are structurally non-applicable ($u_L = \text{N/A}$, returned as `None`). In these cases, active weights are dynamically renormalized across remaining components:
+>    $$w_k' = \frac{w_k}{\sum_{j \neq L} w_j}$$
+>    This produces active weight distributions of $w_F = 1.0$ for P1; $w_F = 0.5, w_R = 0.5$ for P2 and P3; and $w_F = 1/3, w_R = 1/3, w_C = 1/3$ for P4.
+> 4. **Standardized u_R Conventions:** For iterative patterns (P2, P3, and P4), immediate consensus at round 1 represents zero trajectory drift ($\Delta r = 0$) and is scored as $u_R = 0.0$. The value `None` is reserved strictly for Pattern 1 (structural absence of the iterative mechanism) or execution anomalies where zero traces were recorded.
 
 ---
 
@@ -104,11 +120,11 @@ A full-spectrum U(x) of Pattern 4 is a sum over five components; a Pattern 1 sco
 
 ### 4.1 Confirmatory Level: the Shared Surface Score
 
-For between-pattern comparison, the primary endpoint is the surface score computed identically for all four patterns:
+For between-pattern comparison, the primary endpoint is the surface score computed identically for all four patterns. Under the v11 freeze with $u_P$ deactivated ($w_P = 0.00$), the shared surface score is defined as:
 
-$$U_{\text{surface}}(x) = \tfrac{1}{3}\,u_L + \tfrac{1}{3}\,u_F + \tfrac{1}{3}\,u_P$$
+$$U_{\text{surface}}(x) = \tfrac{1}{2}\,u_L + \tfrac{1}{2}\,u_F$$
 
-Every claim of the form "pattern A is less uncertain than pattern B" must be made on U_surface, on identical queries.
+On benchmarks where $u_L$ is structurally non-applicable (FinQA and PopQA), $U_{\text{surface}}(x) = u_F$. Every claim of the form "pattern A is less uncertain than pattern B" must be made on U_surface, on identical queries.
 
 ### 4.2 Diagnostic Level: Pattern-Specific Sensors
 
@@ -137,6 +153,8 @@ Consequences for analysis:
 1. u_F and u_P are never interpreted as two independent confirmations of factuality; effective weight of factual content in U(x) is w_F plus the u_F-mediated share of w_P.
 2. All Phase 3 reports include the per-component breakdown, never only the composite.
 3. Correlations between components are computed and reported in Phase 3 as a validity check of this declared structure.
+
+> **v11 Freeze Note:** Because $u_P$ is deactivated ($w_P = 0.00$), the dependency between $u_P$ and $u_F$ does not affect composite score calculations. Active components in v11 ($u_L$, $u_F$, $u_R$, $u_C$) maintain functional independence.
 
 ---
 
