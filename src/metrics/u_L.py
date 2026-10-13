@@ -15,7 +15,7 @@ def compute_u_L(
 
     # 2. LiveBench: verify exclusively the expected answer slot
     if dataset and dataset.lower() == "livebench":
-        return _check_livebench_answer_slot(final_answer, query)
+        return _check_livebench_answer_slot(final_answer, query, constraints)
 
     # 3. IFEval: compute constraints on the extracted answer span
     if dataset and dataset.lower() == "ifeval":
@@ -32,29 +32,115 @@ def compute_u_L(
     return 0.0
 
 
-def _check_livebench_answer_slot(final_answer: str, query: str | None = None) -> float:
-    if not final_answer or not final_answer.strip():
-        return 1.0
+_HEADER_LABELS = {
+    "conclusion",
+    "answer",
+    "final answer",
+    "note",
+    "step",
+    "summary",
+    "solution",
+    "result",
+    "verdict",
+    "explanation",
+    "analysis",
+}
 
-    # Determine required format from query if present
+
+def _is_header_label(text: str) -> bool:
+    cleaned = text.strip().lower().rstrip(":")
+    return (
+        cleaned in _HEADER_LABELS
+        or cleaned.startswith("step ")
+        or cleaned.startswith("case ")
+    )
+
+
+def _is_terminal_slot(span: str, match: re.Match) -> bool:
+    """Check if a matched span is at the terminal answer slot position."""
+    trailing = span[match.end():].strip()
+    if not trailing or bool(re.fullmatch(r"^[.\s!,;:)\]]+$", trailing)):
+        return True
+
+    lines = [line.strip() for line in span.splitlines() if line.strip()]
+    if lines:
+        last_line = lines[-1]
+        if match.group(0) in last_line:
+            last_line_tail = last_line.split(match.group(0))[-1].strip()
+            if not last_line_tail or bool(re.fullmatch(r"^[.\s!,;:)\]]+$", last_line_tail)):
+                return True
+
+    return False
+
+
+def _extract_livebench_answer_slot(final_answer: str, query: str | None = None) -> str | None:
+    """Isolate the terminal answer slot from final_answer using extract_answer_span."""
+    if not final_answer or not final_answer.strip():
+        return None
+
+    span, _ = extract_answer_span(final_answer)
+    span = span.strip()
+    if not span:
+        return None
+
+    # 1. Format specified by query
     if query:
         if "***" in query:
-            passed = bool(re.search(r"\*\*\*[^*]+?\*\*\*", final_answer))
-            return 0.0 if passed else 1.0
-        if "<solution>" in query:
-            passed = bool(re.search(r"<solution>.*?</solution>", final_answer, re.DOTALL))
-            return 0.0 if passed else 1.0
-        if "**bold**" in query or "in **bold**" in query or "bold" in query.lower():
-            passed = bool(re.search(r"\*\*[^*]+?\*\*", final_answer))
-            return 0.0 if passed else 1.0
+            matches = list(re.finditer(r"\*\*\*([^*]+?)\*\*\*", span))
+            if matches and _is_terminal_slot(span, matches[-1]):
+                return matches[-1].group(1).strip()
+            return None
 
-    # General fallback: check if any standard LiveBench answer slot is present
-    has_slot = (
-        bool(re.search(r"\*\*\*[^*]+?\*\*\*", final_answer))
-        or bool(re.search(r"<solution>.*?</solution>", final_answer, re.DOTALL))
-        or bool(re.search(r"\*\*[^*]+?\*\*", final_answer))
-    )
-    return 0.0 if has_slot else 1.0
+        if "<solution>" in query:
+            matches = list(re.finditer(r"<solution>(.*?)</solution>", span, re.DOTALL))
+            if matches and _is_terminal_slot(span, matches[-1]):
+                return matches[-1].group(1).strip()
+            return None
+
+        if "**bold**" in query or "in **bold**" in query or "bold" in query.lower():
+            matches = list(re.finditer(r"\*\*([^*]+?)\*\*", span))
+            for m in reversed(matches):
+                if _is_terminal_slot(span, m) and not _is_header_label(m.group(1)):
+                    return m.group(1).strip()
+            return None
+
+    # 2. General fallback: inspect markers in order of specificity
+    star_matches = list(re.finditer(r"\*\*\*([^*]+?)\*\*\*", span))
+    if star_matches and _is_terminal_slot(span, star_matches[-1]):
+        return star_matches[-1].group(1).strip()
+
+    sol_matches = list(re.finditer(r"<solution>(.*?)</solution>", span, re.DOTALL))
+    if sol_matches and _is_terminal_slot(span, sol_matches[-1]):
+        return sol_matches[-1].group(1).strip()
+
+    bold_matches = list(re.finditer(r"\*\*([^*]+?)\*\*", span))
+    for m in reversed(bold_matches):
+        if _is_terminal_slot(span, m) and not _is_header_label(m.group(1)):
+            return m.group(1).strip()
+
+    return None
+
+
+extract_livebench_answer_slot = _extract_livebench_answer_slot
+
+
+def _check_livebench_answer_slot(
+    final_answer: str,
+    query: str | None = None,
+    constraints: list[dict] | None = None,
+) -> float:
+    slot = _extract_livebench_answer_slot(final_answer, query)
+    if slot is None or not slot.strip():
+        return 1.0
+
+    if constraints is not None:
+        if not constraints:
+            return 0.0
+        passed = sum(1 for c in constraints if _check_constraint(slot, c))
+        total = len(constraints)
+        return 1.0 - (passed / total) if total > 0 else 0.0
+
+    return 0.0
 
 
 def _compute_ifeval_u_L(
