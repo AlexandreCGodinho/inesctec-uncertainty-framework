@@ -32,6 +32,12 @@ def test_u_L_livebench_slot_compliance():
     assert compute_u_L("Reasoning...\n***Paris***", dataset="livebench", query=q_stars) == 0.0
     assert compute_u_L("Reasoning with no stars Paris", dataset="livebench", query=q_stars) == 1.0
 
+    # False positive test for triple stars in intermediate reasoning
+    ans_stars_reasoning_only = "We check ***case 1*** in reasoning.\nThe answer is London."
+    assert compute_u_L(ans_stars_reasoning_only, dataset="livebench", query=q_stars) == 1.0
+    ans_stars_both = "We check ***case 1*** in reasoning.\n***London***"
+    assert compute_u_L(ans_stars_both, dataset="livebench", query=q_stars) == 0.0
+
     # Solution tag slot
     q_sol = "Output in the format: <solution>A, B</solution>"
     assert compute_u_L("Here is <solution>A, B</solution>", dataset="livebench", query=q_sol) == 0.0
@@ -41,6 +47,25 @@ def test_u_L_livebench_slot_compliance():
     q_bold = "put your answer in **bold**"
     assert compute_u_L("The answer is **42**", dataset="livebench", query=q_bold) == 0.0
     assert compute_u_L("The answer is 42", dataset="livebench", query=q_bold) == 1.0
+
+    # False positive test for bold in intermediate reasoning
+    ans_bold_reasoning_only = "We consider **case 1** where x = 1.\nStep 2: 1 + 1 = 2.\nTherefore, the result is 2."
+    assert compute_u_L(ans_bold_reasoning_only, dataset="livebench", query=q_bold) == 1.0
+    ans_bold_both = "We consider **case 1** where x = 1.\nStep 2: 1 + 1 = 2.\nTherefore, the result is **2**."
+    assert compute_u_L(ans_bold_both, dataset="livebench", query=q_bold) == 0.0
+
+    # Orchestrator verdict preamble with header label and terminal answer
+    ans_verdict = "VERDICT: approved\nReasoning...\n**Conclusion:**\n**42**"
+    assert compute_u_L(ans_verdict, dataset="livebench", query=q_bold) == 0.0
+
+    # Constraints applied strictly to isolated answer slot
+    c_paris = [{"type": "contains", "value": "Paris"}]
+    c_london = [{"type": "contains", "value": "London"}]
+    # Slot has Paris -> passes Paris constraint, fails London constraint
+    assert compute_u_L("Reasoning with London...\n***Paris***", dataset="livebench", constraints=c_paris) == 0.0
+    assert compute_u_L("Reasoning with London...\n***Paris***", dataset="livebench", constraints=c_london) == 1.0
+    # Text contains Paris in reasoning but terminal slot is London -> fails Paris constraint
+    assert compute_u_L("Reasoning with Paris in reasoning...\n***London***", dataset="livebench", constraints=c_paris) == 1.0
 
 
 def test_u_L_ifeval_extracted_span():
