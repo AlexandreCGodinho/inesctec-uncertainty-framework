@@ -137,8 +137,51 @@ class TestCandidatesFromBase:
         assert 1.0 in cands  # millions
 
     def test_thousand_unit_candidates(self):
-        """Thousand unit: candidates = {base, base/1e3, base/1e6}"""
+        """Thousand unit: candidates = {base, base/1e3, base/1e6, base*1e3, base*1e6}"""
         cands = _candidates_from_base(1_000_000.0, "thousand")
         assert 1_000_000.0 in cands
         assert 1_000.0 in cands
         assert 1.0 in cands
+        assert 1_000_000_000.0 in cands
+
+
+class TestUnifiedExtractNumericAnswer:
+    """Tests for unified extraction rule benchmarked against adjudicated labels."""
+
+    def test_pattern4_verdict_approved_extraction(self):
+        text = "Deliberation text.\nVERDICT: approved\n43.9%"
+        record = {"final_answer": text}
+        reference = {"exe_ans": "0.439"}
+        result = finqa_numeric_scorer(record, reference)
+        assert result["match"] == 1.0
+
+    def test_pattern4_verdict_needs_revision_abstains(self):
+        text = "Conflicting analyses.\nVERDICT: needs_revision"
+        record = {"final_answer": text}
+        reference = {"exe_ans": "100.0"}
+        result = finqa_numeric_scorer(record, reference)
+        assert result["match"] == 0.0
+
+    def test_negative_percentage_extraction(self):
+        text = "This represents an ROI of -24.45% (rounded to -24.5%)."
+        record = {"final_answer": text}
+        reference = {"exe_ans": "-0.2445"}
+        result = finqa_numeric_scorer(record, reference)
+        assert result["match"] == 1.0
+
+    def test_date_and_time_horizon_masking(self):
+        text = (
+            "As of September 30, 2005, the proportion due over 36 months "
+            "represents approximately 30.7% of the total."
+        )
+        record = {"final_answer": text}
+        reference = {"exe_ans": "0.307"}
+        result = finqa_numeric_scorer(record, reference)
+        assert result["match"] == 1.0
+
+    def test_bidirectional_scaling_million(self):
+        text = "The amount is $33.458 million."
+        record = {"final_answer": text}
+        reference = {"exe_ans": "33458"}  # raw table units
+        result = finqa_numeric_scorer(record, reference)
+        assert result["match"] == 1.0

@@ -79,7 +79,27 @@ clean final number — flagged for the report discussion, not a parser artifact.
 
 ## 5. Files
 
-- `src/scoring/finqa_numeric_scorer.py` — scorer
-- `tests/test_finqa_numeric_scorer.py` — 13 unit tests (all pass)
-- `telemetry/a100/finqa_references.jsonl` — 1147 `query_id → exe_ans` from pinned
-  `czyssrs/FinQA` `test.json` (commit `0f16e2867befa6840783e58be38c9efb9229d742`)
+- `src/scoring/finqa_numeric_scorer.py`: scorer
+- `tests/test_finqa_numeric_scorer.py`: 27 unit tests (all pass)
+- `scripts/adjudicate_finqa_rule.py`: rule adjudication benchmark
+- `data/audits/finqa_adjudication_report.json`: audit summary
+- `data/audits/finqa_adjudication_details.csv`: per-item audit records
+- `data/finqa_labeling/finqa_labeling_grid_adjudicated.csv`: 120 human-adjudicated ground truth labels
+
+## 6. Phase 2 Task 5A Adjudication Benchmark (120 Hand-Labeled Cells)
+
+To formally decide the extraction rule before executing the 900 scoring calls,
+both candidate extraction rules were evaluated against the 120 blind hand-labeled
+answers in `data/finqa_labeling/finqa_labeling_grid_adjudicated.csv` (30 queries
+across 4 patterns, labeled independently by Fedi and Prof. Alexandre with gold
+answers hidden):
+
+| Extractor Rule | Overall Matches | Accuracy (%) | Pattern A (P1) | Pattern B (P2) | Pattern C (P4) | Pattern D (P3) |
+|---|---|---|---|---|---|---|
+| Rule 1 (Legacy Naive Extractor) | 58 / 120 | 48.33% | 15 / 30 (50.0%) | 14 / 30 (46.7%) | 18 / 30 (60.0%) | 11 / 30 (36.7%) |
+| Rule 2 (Unified Adjudicated Extractor) | 117 / 120 | **97.50%** | **29 / 30 (96.7%)** | **29 / 30 (96.7%)** | **30 / 30 (100.0%)** | **29 / 30 (96.7%)** |
+
+### Findings and Decision
+1. **Rule 2 Selection**: Rule 2 resolves intermediate calculation tokens, masks date and time-horizon numbers, isolates P4 answer spans, and accurately extracts percentage, ratio, and boolean responses, achieving 97.50% fidelity against human consensus.
+2. **Sign-off Readiness**: With 97.5% empirical alignment and 0 false extractions on true abstentions in P4, Rule 2 is officially chosen and frozen for the 900 FinQA execution calls in Task 5B.
+
