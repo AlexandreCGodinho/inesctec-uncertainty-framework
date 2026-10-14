@@ -34,25 +34,42 @@ def compute_composite(
     u_P: float | None,
     u_R: float | None,
     u_C: float | None,
+    dataset: str | None = None,
     matrix_path: str | None = None,
 ) -> float | None:
-    weights = _load_activation_matrix(matrix_path).get(pattern_id)
-    if weights is None:
+    raw_weights = _load_activation_matrix(matrix_path).get(pattern_id)
+    if raw_weights is None:
         return None
-    active = []
-    for key, w in weights.items():
-        value = {
-            "w_L": u_L,
-            "w_F": u_F,
-            "w_P": u_P,
-            "w_R": u_R,
-            "w_C": u_C,
-        }.get(key)
-        if value is not None:
-            active.append(w * value)
-    if not active:
+
+    component_values = {
+        "w_L": u_L,
+        "w_F": u_F,
+        "w_P": u_P,
+        "w_R": u_R,
+        "w_C": u_C,
+    }
+
+    # Only include components with non-zero nominal weight in the active matrix
+    active_weights = {k: w for k, w in raw_weights.items() if w > 0}
+
+    # Conditional deactivation: on FinQA and PopQA, u_L is structurally N/A by task design
+    if dataset and dataset.lower() in ("finqa", "popqa"):
+        active_weights.pop("w_L", None)
+
+    if not active_weights:
         return None
-    return sum(active)
+
+    # Strict abstention: if ANY active component is missing, return None (no zero imputation)
+    for key in active_weights:
+        if component_values.get(key) is None:
+            return None
+
+    # Re-normalize remaining active weights to sum exactly to 1.0
+    total_w = sum(active_weights.values())
+    if total_w <= 0:
+        return None
+
+    return sum((w / total_w) * component_values[k] for k, w in active_weights.items())
 
 
 def compute_surface(u_L: float | None, u_F: float | None, u_P: float | None) -> float | None:

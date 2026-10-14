@@ -1,24 +1,24 @@
 pattern1_governed:
-  w_L: 0.33
-  w_F: 0.33
-  w_P: 0.34
+  w_L: 0.50
+  w_F: 0.50
+  w_P: 0.00
   w_R: 0.00
   w_C: 0.00
 pattern2_role_pipeline:
-  w_L: 0.25
-  w_F: 0.25
-  w_P: 0.25
-  w_R: 0.25
+  w_L: 0.333
+  w_F: 0.333
+  w_P: 0.00
+  w_R: 0.334
   w_C: 0.00
 pattern3_reflexive:
-  w_L: 0.25
-  w_F: 0.25
-  w_P: 0.25
-  w_R: 0.25
+  w_L: 0.333
+  w_F: 0.333
+  w_P: 0.00
+  w_R: 0.334
   w_C: 0.00
 pattern4_deliberation:
-  w_L: 0.20
-  w_F: 0.20
-  w_P: 0.20
-  w_R: 0.20
-  w_C: 0.20
+  w_L: 0.25
+  w_F: 0.25
+  w_P: 0.00
+  w_R: 0.25
+  w_C: 0.25
