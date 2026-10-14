@@ -116,7 +116,7 @@ def test_u_P_with_none_logprobs():
         LLMCall(agent_role="formatter", prompt="", response_text="test",
                 logprobs=None)
     )
-    state.final_answer = "test"
+    state.final_answer = "This is a substantive final answer sentence with enough characters."
     t = build_telemetry(state, MockLLMClient())
     assert t.u_P == 0.0
 
@@ -195,7 +195,7 @@ def test_pattern3_logprobs_from_last_round():
         LLMCall(agent_role="solo_reflexive", round_index=1, prompt="",
                 response_text="revised", logprobs=[-0.2]),
     ]
-    state.final_answer = "revised"
+    state.final_answer = "This is a revised final answer sentence with enough characters."
     t = build_telemetry(state, MockLLMClient())
     assert t.u_P is not None
 
@@ -262,11 +262,11 @@ def test_pattern4_u_P_uses_last_round_analyst_logprobs():
         LLMCall(agent_role="judge", round_index=0, prompt="",
                 response_text="VERDICT: approved."),
     ]
-    state.final_answer = "approved"
+    state.final_answer = "This is an approved final consensus answer with many words."
     t = build_telemetry(state, MockLLMClient())
     assert t.u_P is not None
     averaged = [sum(vals) / len(vals) for vals in zip(*[[-0.5, -0.3], [-0.1, -0.2]])]
-    expected = compute_u_P(averaged, compute_u_F("approved", state.reference, MockLLMClient()))
+    expected = compute_u_P(averaged, compute_u_F("This is an approved final consensus answer with many words.", state.reference, MockLLMClient()))
     assert t.u_P == pytest.approx(expected)
 
 

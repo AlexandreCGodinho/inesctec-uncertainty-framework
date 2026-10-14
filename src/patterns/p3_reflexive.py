@@ -32,7 +32,12 @@ class ReflexiveSingleAgent(Orchestrator):
                 f"Context: {state.reference}\n"
                 f"Provide a clear, definitive draft."
             )
-        draft_call = self.client.call(agent_role="solo_reflexive", prompt=draft_prompt, round_index=0)
+        draft_call = self.client.call(
+            agent_role="solo_reflexive",
+            prompt=draft_prompt,
+            round_index=0,
+            want_logprobs=True,
+        )
         state.calls.append(draft_call)
         current_draft = draft_call.response_text
 
@@ -77,7 +82,12 @@ class ReflexiveSingleAgent(Orchestrator):
                     f"Critique:\n{critique_call.response_text}\n\n"
                     f"Provide the revised, final draft that addresses all critique points."
                 )
-            revision_call = self.client.call(agent_role="solo_reflexive", prompt=revision_prompt, round_index=r)
+            revision_call = self.client.call(
+                agent_role="solo_reflexive",
+                prompt=revision_prompt,
+                round_index=r,
+                want_logprobs=True,
+            )
             state.calls.append(revision_call)
             current_draft = revision_call.response_text
 

@@ -169,6 +169,8 @@ class MockLLMClient(LLMClient):
     def call(self, agent_role, prompt, round_index=0, want_logprobs=False,
              timeout_seconds=None):
         text = f"[mock:{agent_role}:r{round_index}]"
+        if (agent_role in ("drafter", "formatter", "analyst", "judge", "solo_reflexive") or agent_role.startswith("analyst_")) and "JSON" not in prompt:
+            text = f"[mock:{agent_role}:r{round_index}] This is a substantive response."
         if "JSON" in prompt:
             text = '{"mock_claim": 1.0}'
         
