@@ -11,6 +11,9 @@ Evaluates:
 
 All evaluations run with the official gold answer (exe_ans) hidden, ensuring
 objective measurement of extraction fidelity against human consensus.
+
+Re-run command:
+    python scripts/adjudicate_finqa_rule.py
 """
 
 import json

@@ -103,3 +103,17 @@ answers hidden):
 1. **Rule 2 Selection**: Rule 2 resolves intermediate calculation tokens, masks date and time-horizon numbers, isolates P4 answer spans, and accurately extracts percentage, ratio, and boolean responses, achieving 97.50% fidelity against human consensus.
 2. **Sign-off Readiness**: With 97.5% empirical alignment and 0 false extractions on true abstentions in P4, Rule 2 is officially chosen and frozen for the 900 FinQA execution calls in Task 5B.
 
+### Known Limitations and Evaluation Timeline (Reviewer Recommendations)
+1. **Chronological Sequence of Events:**
+   - Blind hand-labeling of 120 answers independently by Fedi and Prof. Alexandre with official gold answers hidden.
+   - Diagnosis of unit scaling from AMT/2014 and AWK/2012, formulating the bidirectional unit scaling rule.
+   - Extraction rule specification frozen.
+   - Out-of-sample adjudication benchmark executed against the 120 human consensus labels.
+
+2. **Two Known Edge-Case Limitations (3 misses across 120 items):**
+   - *Trailing text after conclusion:* In `AAL/2013/page_18.pdf-1` (Pattern B), the model provided 2.8% in its conclusion paragraph but added a trailing bullet point discussing 35.3% of operating expenses. The backward parser captured the trailing 35.3%.
+   - *Contradictory numbers within a single answer:* In `AMT/2006/page_113.pdf-3` (Patterns A and D), the answer contained multiple contradictory numbers where a deterministic regex cannot arbitrate an epistemic abstention.
+
+3. **Blinding Nuance Note:**
+   - Because Pattern 4 models consistently output structural `VERDICT:` lines and reviewer commentary, the human labeling was strictly blind across P1, P2, and P3, while P4 was structurally recognizable.
+
