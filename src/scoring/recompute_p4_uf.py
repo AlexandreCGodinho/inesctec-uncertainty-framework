@@ -231,13 +231,69 @@ def run_recompute_batch(
             [get_seed_dir_name(s) for s in target_seeds],
         )
 
-    # Save summary report
+    import subprocess
+    import time
+
+    commit_sha = "unknown"
+    git_tag = "v10"
+    try:
+        commit_sha = (
+            subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
+            .decode()
+            .strip()
+        )
+        git_tag = (
+            subprocess.check_output(["git", "describe", "--tags", "--always"], stderr=subprocess.DEVNULL)
+            .decode()
+            .strip()
+        )
+    except Exception:
+        pass
+
+    judge_prompt_template = (
+        "Claims:\n{claims_text}\n\n"
+        "Assess each claim's factual accuracy using your own knowledge:\n"
+        "  -1 = contradicted\n"
+        "   0 = not enough information\n"
+        "  +0.5 = partially supported\n"
+        "  +1 = fully supported\n\n"
+        "You MUST return a valid JSON object mapping the claim index (as string) to its numeric score.\n"
+        "Example: {\"0\": 1, \"1\": -1, \"2\": 0.5}\n\n"
+        "JSON:"
+    )
+
+    manifest_data = {
+        "commit": commit_sha,
+        "tag": git_tag,
+        "execution_timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "judge_model": "google/gemma-4-12b-it",
+        "judge_role": "judge",
+        "server_params": {
+            "model": "google/gemma-4-12b-it",
+            "max-model-len": 8192,
+            "gpu-memory-utilization": 0.90,
+            "dtype": "bfloat16",
+        },
+        "judge_prompt": judge_prompt_template,
+        "datasets": target_datasets,
+        "seeds": target_seeds,
+        "overall_records": summary["overall_records"],
+    }
+
+    summary["manifest"] = manifest_data
+
+    # Save summary report and manifest.json
     out_path.mkdir(parents=True, exist_ok=True)
     report_file = out_path / "recompute_uf_summary.json"
+    manifest_file = out_path / "manifest.json"
+
     with open(report_file, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
 
-    logger.info("Summary report saved to %s", report_file)
+    with open(manifest_file, "w", encoding="utf-8") as f:
+        json.dump(manifest_data, f, indent=2)
+
+    logger.info("Summary report saved to %s and manifest to %s", report_file, manifest_file)
     return summary
 
 
