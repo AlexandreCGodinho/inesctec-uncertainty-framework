@@ -79,7 +79,41 @@ clean final number — flagged for the report discussion, not a parser artifact.
 
 ## 5. Files
 
-- `src/scoring/finqa_numeric_scorer.py` — scorer
-- `tests/test_finqa_numeric_scorer.py` — 13 unit tests (all pass)
-- `telemetry/a100/finqa_references.jsonl` — 1147 `query_id → exe_ans` from pinned
-  `czyssrs/FinQA` `test.json` (commit `0f16e2867befa6840783e58be38c9efb9229d742`)
+- `src/scoring/finqa_numeric_scorer.py`: scorer
+- `tests/test_finqa_numeric_scorer.py`: 27 unit tests (all pass)
+- `scripts/adjudicate_finqa_rule.py`: rule adjudication benchmark
+- `data/audits/finqa_adjudication_report.json`: audit summary
+- `data/audits/finqa_adjudication_details.csv`: per-item audit records
+- `data/finqa_labeling/finqa_labeling_grid_adjudicated.csv`: 120 human-adjudicated ground truth labels
+
+## 6. Phase 2 Task 5A Adjudication Benchmark (120 Hand-Labeled Cells)
+
+To formally decide the extraction rule before executing the 900 scoring calls,
+both candidate extraction rules were evaluated against the 120 blind hand-labeled
+answers in `data/finqa_labeling/finqa_labeling_grid_adjudicated.csv` (30 queries
+across 4 patterns, labeled independently by Fedi and Prof. Alexandre with gold
+answers hidden):
+
+| Extractor Rule | Overall Matches | Accuracy (%) | Pattern A (P1) | Pattern B (P2) | Pattern C (P4) | Pattern D (P3) |
+|---|---|---|---|---|---|---|
+| Rule 1 (Legacy Naive Extractor) | 58 / 120 | 48.33% | 15 / 30 (50.0%) | 14 / 30 (46.7%) | 18 / 30 (60.0%) | 11 / 30 (36.7%) |
+| Rule 2 (Unified Adjudicated Extractor) | 117 / 120 | **97.50%** | **29 / 30 (96.7%)** | **29 / 30 (96.7%)** | **30 / 30 (100.0%)** | **29 / 30 (96.7%)** |
+
+### Findings and Decision
+1. **Rule 2 Selection**: Rule 2 resolves intermediate calculation tokens, masks date and time-horizon numbers, isolates P4 answer spans, and accurately extracts percentage, ratio, and boolean responses, achieving 97.50% fidelity against human consensus.
+2. **Sign-off Readiness**: With 97.5% empirical alignment and 0 false extractions on true abstentions in P4, Rule 2 is officially chosen and frozen for the 900 FinQA execution calls in Task 5B.
+
+### Known Limitations and Evaluation Timeline (Reviewer Recommendations)
+1. **Chronological Sequence of Events:**
+   - Blind hand-labeling of 120 answers independently by Fedi and Prof. Alexandre with official gold answers hidden.
+   - Diagnosis of unit scaling from AMT/2014 and AWK/2012, formulating the bidirectional unit scaling rule.
+   - Extraction rule specification frozen.
+   - Out-of-sample adjudication benchmark executed against the 120 human consensus labels.
+
+2. **Two Known Edge-Case Limitations (3 misses across 120 items):**
+   - *Trailing text after conclusion:* In `AAL/2013/page_18.pdf-1` (Pattern B), the model provided 2.8% in its conclusion paragraph but added a trailing bullet point discussing 35.3% of operating expenses. The backward parser captured the trailing 35.3%.
+   - *Contradictory numbers within a single answer:* In `AMT/2006/page_113.pdf-3` (Patterns A and D), the answer contained multiple contradictory numbers where a deterministic regex cannot arbitrate an epistemic abstention.
+
+3. **Blinding Nuance Note:**
+   - Because Pattern 4 models consistently output structural `VERDICT:` lines and reviewer commentary, the human labeling was strictly blind across P1, P2, and P3, while P4 was structurally recognizable.
+

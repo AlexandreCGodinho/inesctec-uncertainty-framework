@@ -1,0 +1,43 @@
+{
+  "benchmark": "FinQA Extraction Rule Adjudication (Phase 2 Task 5A)",
+  "adjudicated_file": "data/finqa_labeling/finqa_labeling_grid_adjudicated.csv",
+  "total_cells_evaluated": 120,
+  "queries_evaluated": 30,
+  "tolerance": {
+    "relative": 0.005,
+    "absolute": 1e-05
+  },
+  "rule_1_legacy_naive": {
+    "matches": 58,
+    "total": 120,
+    "accuracy_pct": 48.33
+  },
+  "rule_2_unified_adjudicated": {
+    "matches": 117,
+    "total": 120,
+    "accuracy_pct": 97.5,
+    "per_pattern": {
+      "A": {
+        "total": 30,
+        "matches": 29,
+        "accuracy_pct": 96.67
+      },
+      "B": {
+        "total": 30,
+        "matches": 29,
+        "accuracy_pct": 96.67
+      },
+      "C": {
+        "total": 30,
+        "matches": 30,
+        "accuracy_pct": 100.0
+      },
+      "D": {
+        "total": 30,
+        "matches": 29,
+        "accuracy_pct": 96.67
+      }
+    }
+  },
+  "recommendation": "Adopt Rule 2 (Unified Span & Section Aware Extractor) for the 900 FinQA calls. Rule 2 achieves 97.5% extraction fidelity across all patterns, compared to 48.33% for the naive legacy extractor."
+}

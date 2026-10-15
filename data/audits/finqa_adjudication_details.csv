@@ -1,0 +1,121 @@
+query_id,pattern,true_value,true_unit,true_abstain,rule1_val,rule1_match,rule1_status,rule2_val,rule2_unit,rule2_abstain,rule2_match,rule2_status
+AAL/2013/page_172.pdf-1,A,15.7,%,False,0.157,True,numeric_match_scaled_pct,15.7,%,False,True,numeric_match
+AAL/2013/page_172.pdf-1,B,15.7,%,False,5424000000.0,False,numeric_mismatch,15.7,%,False,True,numeric_match
+AAL/2013/page_172.pdf-1,C,15.7,%,False,0.157,True,numeric_match_scaled_pct,15.7,%,False,True,numeric_match
+AAL/2013/page_172.pdf-1,D,15.7,%,False,5424000000.0,False,numeric_mismatch,15.7,%,False,True,numeric_match
+AAL/2013/page_172.pdf-3,A,15.7,%,False,0.157,True,numeric_match_scaled_pct,15.7,%,False,True,numeric_match
+AAL/2013/page_172.pdf-3,B,15.7,%,False,849000000.0,False,numeric_mismatch,15.7,%,False,True,numeric_match
+AAL/2013/page_172.pdf-3,C,15.7,%,False,0.157,True,numeric_match_scaled_pct,15.7,%,False,True,numeric_match
+AAL/2013/page_172.pdf-3,D,15.7,%,False,0.157,True,numeric_match_scaled_pct,15.7,%,False,True,numeric_match
+AAL/2013/page_18.pdf-1,A,2.8,%,False,0.027999999999999997,True,numeric_match_scaled_pct,2.8,%,False,True,numeric_match
+AAL/2013/page_18.pdf-1,B,2.8,%,False,0.353,False,numeric_mismatch,35.3,%,False,False,numeric_mismatch
+AAL/2013/page_18.pdf-1,C,2.8,%,False,0.027999999999999997,True,numeric_match_scaled_pct,2.8,%,False,True,numeric_match
+AAL/2013/page_18.pdf-1,D,2.8,%,False,0.027999999999999997,True,numeric_match_scaled_pct,2.8,%,False,True,numeric_match
+AAL/2013/page_18.pdf-3,A,19.5,%,False,0.195,True,numeric_match_scaled_pct,19.5,%,False,True,numeric_match
+AAL/2013/page_18.pdf-3,B,16.35,%,False,0.1635,True,numeric_match_scaled_pct,16.35,%,False,True,numeric_match
+AAL/2013/page_18.pdf-3,C,19.50,%,False,0.195,True,numeric_match_scaled_pct,19.5,%,False,True,numeric_match
+AAL/2013/page_18.pdf-3,D,16.3,%,False,104000000.0,False,numeric_mismatch,16.3,%,False,True,numeric_match
+AAL/2014/page_15.pdf-2,A,19.9,%,False,0.19899999999999998,True,numeric_match_scaled_pct,19.9,%,False,True,numeric_match
+AAL/2014/page_15.pdf-2,B,19.86,%,False,0.1986,True,numeric_match_scaled_pct,19.86,%,False,True,numeric_match
+AAL/2014/page_15.pdf-2,C,19.9,%,False,0.19899999999999998,True,numeric_match_scaled_pct,19.9,%,False,True,numeric_match
+AAL/2014/page_15.pdf-2,D,19.86,%,False,0.1986,True,numeric_match_scaled_pct,19.86,%,False,True,numeric_match
+AAL/2016/page_8.pdf-1,A,13.20,%,False,0.132,True,numeric_match_scaled_pct,13.2,%,False,True,numeric_match
+AAL/2016/page_8.pdf-1,B,13.20,%,False,0.13699999999999998,False,numeric_mismatch,13.2,%,False,True,numeric_match
+AAL/2016/page_8.pdf-1,C,13.20,%,False,0.132,True,numeric_match_scaled_pct,13.2,%,False,True,numeric_match
+AAL/2016/page_8.pdf-1,D,13.20,%,False,0.132,True,numeric_match_scaled_pct,13.2,%,False,True,numeric_match
+AAL/2016/page_8.pdf-3,A,18.80,%,False,0.188,True,numeric_match_scaled_pct,18.8,%,False,True,numeric_match
+AAL/2016/page_8.pdf-3,B,18.80,%,False,0.188,True,numeric_match_scaled_pct,18.8,%,False,True,numeric_match
+AAL/2016/page_8.pdf-3,C,18.80,%,False,0.188,True,numeric_match_scaled_pct,18.8,%,False,True,numeric_match
+AAL/2016/page_8.pdf-3,D,18.80,%,False,,False,false_abstain,18.8,%,False,True,numeric_match
+ABC/2005/page_49.pdf-4,A,90,%,False,0.9,True,numeric_match_scaled_pct,90.0,%,False,True,numeric_match
+ABC/2005/page_49.pdf-4,B,90,%,False,0.9,True,numeric_match_scaled_pct,90.0,%,False,True,numeric_match
+ABC/2005/page_49.pdf-4,C,90,%,False,0.9,True,numeric_match_scaled_pct,90.0,%,False,True,numeric_match
+ABC/2005/page_49.pdf-4,D,90,%,False,0.9,True,numeric_match_scaled_pct,90.0,%,False,True,numeric_match
+ABMD/2005/page_29.pdf-2,A,yes,boolean,False,2004.0,False,boolean_mismatch,yes,boolean,False,True,boolean_match
+ABMD/2005/page_29.pdf-2,B,yes,boolean,False,2004.0,False,boolean_mismatch,yes,boolean,False,True,boolean_match
+ABMD/2005/page_29.pdf-2,C,yes,boolean,False,2005.0,False,boolean_mismatch,yes,boolean,False,True,boolean_match
+ABMD/2005/page_29.pdf-2,D,yes,boolean,False,2004.0,False,boolean_mismatch,yes,boolean,False,True,boolean_match
+ABMD/2005/page_29.pdf-4,A,51.20,%,False,0.512,True,numeric_match_scaled_pct,51.2,%,False,True,numeric_match
+ABMD/2005/page_29.pdf-4,B,51.17,%,False,0.5117,True,numeric_match_scaled_pct,51.17,%,False,True,numeric_match
+ABMD/2005/page_29.pdf-4,C,51.20,%,False,0.512,True,numeric_match_scaled_pct,51.2,%,False,True,numeric_match
+ABMD/2005/page_29.pdf-4,D,51.20,%,False,0.512,True,numeric_match_scaled_pct,51.2,%,False,True,numeric_match
+ABMD/2012/page_41.pdf-3,A,-24.45,%,False,0.245,False,numeric_mismatch,-24.5,%,False,True,numeric_match
+ABMD/2012/page_41.pdf-3,B,-24.45,%,False,0.245,False,numeric_mismatch,-24.5,%,False,True,numeric_match
+ABMD/2012/page_41.pdf-3,C,-24.50,%,False,0.245,False,numeric_mismatch,-24.5,%,False,True,numeric_match
+ABMD/2012/page_41.pdf-3,D,-24.45,%,False,0.2445,False,numeric_mismatch,-24.45,%,False,True,numeric_match
+ABMD/2012/page_79.pdf-2,A,35,%,False,0.35,True,numeric_match_scaled_pct,35.0,%,False,True,numeric_match
+ABMD/2012/page_79.pdf-2,B,,,True,2013.0,False,false_extraction_on_abstain,,,True,True,correct_abstain
+ABMD/2012/page_79.pdf-2,C,1476.3,thousand $,False,0.35,False,numeric_mismatch,1476.3,$,False,True,numeric_match
+ABMD/2012/page_79.pdf-2,D,4218,$,False,2017.0,False,numeric_mismatch,4218.0,,False,True,numeric_match
+ADI/2010/page_80.pdf-3,A,9.40,%,False,0.094,True,numeric_match_scaled_pct,9.4,%,False,True,numeric_match
+ADI/2010/page_80.pdf-3,B,,,True,0.094,False,false_extraction_on_abstain,,,True,True,correct_abstain
+ADI/2010/page_80.pdf-3,C,9.40,%,False,0.094,True,numeric_match_scaled_pct,9.4,%,False,True,numeric_match
+ADI/2010/page_80.pdf-3,D,,,True,2009.0,False,false_extraction_on_abstain,,,True,True,correct_abstain
+AES/2001/page_33.pdf-2,A,12.30,$,False,2001.0,False,numeric_mismatch,12.3,$,False,True,numeric_match
+AES/2001/page_33.pdf-2,B,12.30,thousand $,False,2000.0,False,numeric_mismatch,12.3,,False,True,numeric_match
+AES/2001/page_33.pdf-2,C,12.30,$,False,2001.0,False,numeric_mismatch,12.3,$,False,True,numeric_match
+AES/2001/page_33.pdf-2,D,12.30,$,False,2001.0,False,numeric_mismatch,12.3,,False,True,numeric_match
+AES/2010/page_227.pdf-3,A,10,%,False,4612000000.0,False,numeric_mismatch,10.0,%,False,True,numeric_match
+AES/2010/page_227.pdf-3,B,10,%,False,0.1,True,numeric_match_scaled_pct,10.0,%,False,True,numeric_match
+AES/2010/page_227.pdf-3,C,10,%,False,0.1,True,numeric_match_scaled_pct,10.0,%,False,True,numeric_match
+AES/2010/page_227.pdf-3,D,,,True,463000000.0,False,false_extraction_on_abstain,,,True,True,correct_abstain
+ALLE/2015/page_24.pdf-2,A,5.9,million $,False,5900000.0,False,numeric_mismatch,5.9,million,False,True,numeric_match
+ALLE/2015/page_24.pdf-2,B,5.9,million $,False,5900000.0,False,numeric_mismatch,5.9,million,False,True,numeric_match
+ALLE/2015/page_24.pdf-2,C,5.9,million,False,5900000.0,False,numeric_mismatch,5.9,million,False,True,numeric_match
+ALLE/2015/page_24.pdf-2,D,5.9,million,False,8800000.0,False,numeric_mismatch,5.9,million,False,True,numeric_match
+AMT/2003/page_27.pdf-1,A,33.30,%,False,0.33299999999999996,True,numeric_match_scaled_pct,33.3,%,False,True,numeric_match
+AMT/2003/page_27.pdf-1,B,33.30,%,False,0.33299999999999996,True,numeric_match_scaled_pct,33.3,%,False,True,numeric_match
+AMT/2003/page_27.pdf-1,C,33.30,%,False,0.33299999999999996,True,numeric_match_scaled_pct,33.3,%,False,True,numeric_match
+AMT/2003/page_27.pdf-1,D,10000,square feet,False,10000.0,True,numeric_match,10000.0,,False,True,numeric_match
+AMT/2006/page_104.pdf-3,A,81.30,%,False,400000000.0,False,numeric_mismatch,81.3,%,False,True,numeric_match
+AMT/2006/page_104.pdf-3,B,81.3,%,False,0.813,True,numeric_match_scaled_pct,81.3,%,False,True,numeric_match
+AMT/2006/page_104.pdf-3,C,81.30,%,False,0.813,True,numeric_match_scaled_pct,81.3,%,False,True,numeric_match
+AMT/2006/page_104.pdf-3,D,18.73,%,False,0.1873,True,numeric_match_scaled_pct,18.73,%,False,True,numeric_match
+AMT/2006/page_113.pdf-3,A,-364,$,False,2004.0,False,numeric_mismatch,,,True,False,false_abstain
+AMT/2006/page_113.pdf-3,B,1949,thousand $,False,84.0,False,numeric_mismatch,1949.0,,False,True,numeric_match
+AMT/2006/page_113.pdf-3,C,,,True,3.0,False,false_extraction_on_abstain,,,True,True,correct_abstain
+AMT/2006/page_113.pdf-3,D,,,True,2005.0,False,false_extraction_on_abstain,448.0,,False,False,false_extraction_on_abstain
+AMT/2008/page_107.pdf-4,A,-13636,$,False,2006.0,False,numeric_mismatch,-13636.0,,False,True,numeric_match
+AMT/2008/page_107.pdf-4,B,13636,thousand $,False,2006.0,False,numeric_mismatch,13636.0,,False,True,numeric_match
+AMT/2008/page_107.pdf-4,C,-13636,$,False,2006.0,False,numeric_mismatch,-13636.0,,False,True,numeric_match
+AMT/2008/page_107.pdf-4,D,13636,$,False,31.0,False,numeric_mismatch,13636.0,,False,True,numeric_match
+AMT/2014/page_149.pdf-2,A,33.458, million $,False,33458000.0,False,numeric_mismatch,33.458,million,False,True,numeric_match
+AMT/2014/page_149.pdf-2,B,33.458,million $,False,33458000.0,False,numeric_mismatch,33.458,million,False,True,numeric_match
+AMT/2014/page_149.pdf-2,C,33.458,million $,False,33458000.0,False,numeric_mismatch,33.458,million,False,True,numeric_match
+AMT/2014/page_149.pdf-2,D,33.458,million $,False,33458000.0,False,numeric_mismatch,33.458,million,False,True,numeric_match
+AMT/2014/page_160.pdf-1,A,32.30,%,False,0.32299999999999995,True,numeric_match_scaled_pct,32.3,%,False,True,numeric_match
+AMT/2014/page_160.pdf-1,B,32.30,%,False,0.32299999999999995,True,numeric_match_scaled_pct,32.3,%,False,True,numeric_match
+AMT/2014/page_160.pdf-1,C,32.30,%,False,0.32299999999999995,True,numeric_match_scaled_pct,32.3,%,False,True,numeric_match
+AMT/2014/page_160.pdf-1,D,32.30,%,False,655000000.0,False,numeric_mismatch,32.3,%,False,True,numeric_match
+AMT/2014/page_160.pdf-4,A,yes,boolean,False,574400000.0,False,boolean_mismatch,yes,boolean,False,True,boolean_match
+AMT/2014/page_160.pdf-4,B,Inconclusive,String,False,574400000.0,False,text_mismatch,,,True,True,correct_inconclusive
+AMT/2014/page_160.pdf-4,C,yes,boolean,False,574438000.0,False,boolean_mismatch,yes,boolean,False,True,boolean_match
+AMT/2014/page_160.pdf-4,D,no,boolean,False,2015.0,False,boolean_mismatch,no,boolean,False,True,boolean_match
+ANSS/2012/page_93.pdf-1,A,33.26,%,False,0.3326,True,numeric_match_scaled_pct,33.26,%,False,True,numeric_match
+ANSS/2012/page_93.pdf-1,B,33.26,%,False,0.3326,True,numeric_match_scaled_pct,33.26,%,False,True,numeric_match
+ANSS/2012/page_93.pdf-1,C,33.26,%,False,0.3326,True,numeric_match_scaled_pct,33.26,%,False,True,numeric_match
+ANSS/2012/page_93.pdf-1,D,33.26,%,False,0.3326,True,numeric_match_scaled_pct,33.26,%,False,True,numeric_match
+AON/2007/page_188.pdf-1,A,32.07,%,False,0.3207,True,numeric_match_scaled_pct,32.07,%,False,True,numeric_match
+AON/2007/page_188.pdf-1,B,32.07,%,False,0.3207,True,numeric_match_scaled_pct,32.07,%,False,True,numeric_match
+AON/2007/page_188.pdf-1,C,32.07,%,False,0.3207,True,numeric_match_scaled_pct,32.07,%,False,True,numeric_match
+AON/2007/page_188.pdf-1,D,32.07,%,False,0.3207,True,numeric_match_scaled_pct,32.07,%,False,True,numeric_match
+AWK/2012/page_117.pdf-3,A,40264,million,False,40264000000.0,False,numeric_mismatch,40264.0,million,False,True,numeric_match
+AWK/2012/page_117.pdf-3,B,0.040264,million $,False,40000.0,False,numeric_mismatch,0.040264,million,False,True,numeric_match
+AWK/2012/page_117.pdf-3,C,40264,$,False,40264.0,True,numeric_match,40264.0,,False,True,numeric_match
+AWK/2012/page_117.pdf-3,D,0.040,million $,False,40000.0,False,numeric_mismatch,0.04,million,False,True,numeric_match
+AWK/2013/page_122.pdf-1,A,178189,$,False,31.0,False,numeric_mismatch,178189.0,$,False,True,numeric_match
+AWK/2013/page_122.pdf-1,B,178189,$,False,2013.0,False,numeric_mismatch,178189.0,,False,True,numeric_match
+AWK/2013/page_122.pdf-1,C,178189,$,False,2013.0,False,numeric_mismatch,178189.0,$,False,True,numeric_match
+AWK/2013/page_122.pdf-1,D,178189,$,False,2013.0,False,numeric_mismatch,178189.0,,False,True,numeric_match
+BLK/2012/page_145.pdf-1,A,30.7,%,False,5687000000.0,False,numeric_mismatch,30.7,%,False,True,numeric_match
+BLK/2012/page_145.pdf-1,B,30.8,%,False,0.308,True,numeric_match_scaled_pct,30.8,%,False,True,numeric_match
+BLK/2012/page_145.pdf-1,C,30.70,%,False,0.307,True,numeric_match_scaled_pct,30.7,%,False,True,numeric_match
+BLK/2012/page_145.pdf-1,D,44,%,False,5687000000.0,False,numeric_mismatch,44.0,%,False,True,numeric_match
+BLK/2012/page_145.pdf-3,A,43.9,%,False,5687000000.0,False,numeric_mismatch,43.9,%,False,True,numeric_match
+BLK/2012/page_145.pdf-3,B,43.9,%,False,0.439,True,numeric_match_scaled_pct,43.9,%,False,True,numeric_match
+BLK/2012/page_145.pdf-3,C,43.9,%,False,0.439,True,numeric_match_scaled_pct,43.9,%,False,True,numeric_match
+BLK/2012/page_145.pdf-3,D,56.2,%,False,5687000000.0,False,numeric_mismatch,56.2,%,False,True,numeric_match
+BLK/2015/page_124.pdf-3,A,33.1,%,False,1203000000.0,False,numeric_mismatch,33.1,%,False,True,numeric_match
+BLK/2015/page_124.pdf-3,B,33.1,%,False,1203000000.0,False,numeric_mismatch,33.1,%,False,True,numeric_match
+BLK/2015/page_124.pdf-3,C,33.1,%,False,0.331,True,numeric_match_scaled_pct,33.1,%,False,True,numeric_match
+BLK/2015/page_124.pdf-3,D,643,million $,False,643000000.0,False,numeric_mismatch,643.0,million,False,True,numeric_match
