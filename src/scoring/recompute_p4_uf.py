@@ -1,0 +1,295 @@
+#!/usr/bin/env python3
+"""
+Recompute u_F on Extracted Answer Spans for Pattern 4 (Phase 2 Task 4).
+
+Processes:
+- Datasets: PopQA, IFEval, LiveBench
+- Pattern: P4 (Multi-Perspective Deliberation)
+- Seeds: 1234, 2345, 3456
+- Total items: 3 datasets * 3 seeds * 150 items = 1,350 items
+
+Operational Rules:
+1. Extract answer span using extract_answer_span (Doc 08).
+2. If category == "needs_revision":
+   - u_F = None (strict operational abstention).
+   - No judge LLM call is made.
+3. If category in ("approved", "empty_approved", "approved_fallback", "no_verdict"):
+   - If span is non-empty, evaluate claims strictly on the extracted span.
+   - If claims list is empty, u_F = None (Phase 1 zero-claims fallback).
+   - If claims exist, call LLM judge (google/gemma-4-12b-it) to score claims.
+4. Baseline data files (data/report_run_a100*/) remain frozen and untouched.
+5. All recomputed records are saved to an isolated audit directory.
+"""
+
+import argparse
+import json
+import logging
+import os
+import sys
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from src.metrics.u_F import JudgeParseError, _split_claims, compute_u_F
+from src.scoring.answer_span import extract_answer_span
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger("recompute_p4_uf")
+
+DATASETS = ["popqa", "ifeval", "livebench"]
+SEEDS = [1234, 2345, 3456]
+
+
+def get_seed_dir_name(seed: int) -> str:
+    """Return the input folder name for a given seed."""
+    if seed == 1234:
+        return "report_run_a100"
+    return f"report_run_a100_seed{seed}"
+
+
+def recompute_single_record(
+    record: Dict[str, Any],
+    client: Any,
+    reference: str = "",
+    min_claim_chars: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Process a single Pattern 4 telemetry record and recompute u_F on extracted span.
+    """
+    final_answer = record.get("final_answer", "") or ""
+    span, category = extract_answer_span(final_answer)
+
+    raw_claims = _split_claims(final_answer, min_chars=min_claim_chars)
+    span_claims = (
+        _split_claims(span, min_chars=min_claim_chars) if span.strip() else []
+    )
+
+    new_u_F: Optional[float] = None
+    judge_parse_error = False
+
+    if category == "needs_revision":
+        # Strict abstention: needs_revision means no final consensus was accepted
+        new_u_F = None
+        judge_parse_error = False
+    elif not span.strip() or not span_claims:
+        # Empty span or zero claims fallback to None per Phase 1
+        new_u_F = None
+    else:
+        try:
+            new_u_F = compute_u_F(
+                final_answer=span,
+                reference=reference,
+                llm_judge_callable=client,
+                min_claim_chars=min_claim_chars,
+            )
+        except JudgeParseError:
+            new_u_F = None
+            judge_parse_error = True
+        except Exception as exc:
+            logger.warning(
+                "Unexpected error during judge evaluation of query %s: %s",
+                record.get("query_id"),
+                exc,
+            )
+            new_u_F = None
+            judge_parse_error = True
+
+    # Build updated record with audit trail
+    updated = dict(record)
+    updated["u_F_original"] = record.get("u_F")
+    updated["u_F"] = new_u_F
+    updated["judge_parse_error"] = judge_parse_error
+    updated["extracted_answer_span"] = span
+    updated["span_category"] = category
+    updated["raw_claims_count"] = len(raw_claims)
+    updated["span_claims_count"] = len(span_claims)
+    updated["u_F_recomputed"] = True
+
+    return updated
+
+
+def recompute_file(
+    input_path: Path,
+    output_path: Path,
+    client: Any,
+    sample_size: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Recompute u_F for all records in a single {dataset}_pattern4.jsonl file.
+    """
+    if not input_path.exists():
+        logger.warning("Input file %s does not exist, skipping.", input_path)
+        return {"total": 0, "processed": 0}
+
+    records: List[Dict[str, Any]] = []
+    with open(input_path, "r", encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                records.append(json.loads(line))
+
+    if sample_size is not None and sample_size > 0:
+        records = records[:sample_size]
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    processed_count = 0
+    needs_revision_count = 0
+    approved_count = 0
+    claims_raw_total = 0
+    claims_span_total = 0
+
+    recomputed_records: List[Dict[str, Any]] = []
+
+    for rec in records:
+        updated = recompute_single_record(rec, client)
+        recomputed_records.append(updated)
+        processed_count += 1
+
+        if updated["span_category"] == "needs_revision":
+            needs_revision_count += 1
+        elif updated["span_category"] == "approved":
+            approved_count += 1
+
+        claims_raw_total += updated["raw_claims_count"]
+        claims_span_total += updated["span_claims_count"]
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        for rec in recomputed_records:
+            f.write(json.dumps(rec) + "\n")
+
+    logger.info(
+        "Finished %s -> %s (Processed: %d, Approved: %d, NeedsRevision: %d, RawClaims: %d, SpanClaims: %d)",
+        input_path.name,
+        output_path.name,
+        processed_count,
+        approved_count,
+        needs_revision_count,
+        claims_raw_total,
+        claims_span_total,
+    )
+
+    return {
+        "file": input_path.name,
+        "total": len(records),
+        "processed": processed_count,
+        "approved": approved_count,
+        "needs_revision": needs_revision_count,
+        "raw_claims_total": claims_raw_total,
+        "span_claims_total": claims_span_total,
+    }
+
+
+def run_recompute_batch(
+    base_dir: str,
+    output_dir: str,
+    client: Any = None,
+    datasets: Optional[List[str]] = None,
+    seeds: Optional[List[int]] = None,
+    sample_size: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Run full recomputation batch across datasets and seeds."""
+    target_datasets = datasets or DATASETS
+    target_seeds = seeds or SEEDS
+    base_path = Path(base_dir)
+    out_path = Path(output_dir)
+
+    summary: Dict[str, Any] = {
+        "datasets": target_datasets,
+        "seeds": target_seeds,
+        "files_processed": [],
+        "overall_records": 0,
+        "overall_raw_claims": 0,
+        "overall_span_claims": 0,
+    }
+
+    for seed in target_seeds:
+        seed_folder = get_seed_dir_name(seed)
+        input_seed_dir = base_path / seed_folder
+        output_seed_dir = out_path / seed_folder
+
+        for ds in target_datasets:
+            in_file = input_seed_dir / f"{ds}_pattern4.jsonl"
+            out_file = output_seed_dir / f"{ds}_pattern4.jsonl"
+
+            res = recompute_file(
+                input_path=in_file,
+                output_path=out_file,
+                client=client,
+                sample_size=sample_size,
+            )
+            summary["files_processed"].append(res)
+            summary["overall_records"] += res.get("processed", 0)
+            summary["overall_raw_claims"] += res.get("raw_claims_total", 0)
+            summary["overall_span_claims"] += res.get("span_claims_total", 0)
+
+    if summary["overall_records"] == 0:
+        logger.warning(
+            "No records were processed. Verify that base-dir '%s' contains the expected seed directories: %s",
+            base_dir,
+            [get_seed_dir_name(s) for s in target_seeds],
+        )
+
+    # Save summary report
+    out_path.mkdir(parents=True, exist_ok=True)
+    report_file = out_path / "recompute_uf_summary.json"
+    with open(report_file, "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2)
+
+    logger.info("Summary report saved to %s", report_file)
+    return summary
+
+
+if __name__ == "__main__":
+    from src.llm_client import LLMClient, check_server_available
+
+    parser = argparse.ArgumentParser(
+        description="Recompute u_F on extracted answer spans for Pattern 4."
+    )
+    parser.add_argument(
+        "--base-dir",
+        default="data",
+        help="Base directory containing the report_run_a100* input directories.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default="data/audits/recomputed_uf_v11",
+        help="Output directory where recomputed files will be written.",
+    )
+    parser.add_argument(
+        "--sample-size",
+        type=int,
+        default=None,
+        help="Optional limit on records per file for dry-run testing.",
+    )
+    parser.add_argument(
+        "--datasets",
+        nargs="+",
+        default=DATASETS,
+        help="Datasets to process (default: popqa ifeval livebench).",
+    )
+    parser.add_argument(
+        "--seeds",
+        nargs="+",
+        type=int,
+        default=SEEDS,
+        help="Seeds to process (default: 1234 2345 3456).",
+    )
+    args = parser.parse_args()
+
+    client = LLMClient()
+    if not check_server_available(client.api_base):
+        logger.critical(
+            "vLLM server at %s is not reachable. Aborting.", client.api_base
+        )
+        sys.exit(1)
+
+    run_recompute_batch(
+        base_dir=args.base_dir,
+        output_dir=args.output_dir,
+        client=client,
+        datasets=args.datasets,
+        seeds=args.seeds,
+        sample_size=args.sample_size,
+    )
