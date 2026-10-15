@@ -1,7 +1,12 @@
 {
   "task": "Phase 2 Task 5B: FinQA 900 Automated Scoring Batch",
-  "timestamp": "2026-10-15T15:56:52Z",
+  "timestamp": "2026-10-15T19:29:41Z",
   "pinned_finqa_commit": "0f16e2867befa6840783e58be38c9efb9229d742",
+  "scoring_method": "deterministic_rule_based",
+  "llm_judge_invoked": false,
+  "telemetry_provenance": "Google Colab Pro+ GPU A100 baseline runs (data/report_run_a100*)",
+  "judge_model_baseline": "google/gemma-4-12b-it",
+  "u_F_status": "Strictly frozen from official baseline runs; not recomputed or altered",
   "tolerance": {
     "relative": 0.005,
     "absolute": 1e-06

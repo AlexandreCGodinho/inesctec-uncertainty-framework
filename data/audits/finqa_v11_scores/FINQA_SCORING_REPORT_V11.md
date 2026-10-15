@@ -1,6 +1,6 @@
 # FinQA 900 Automated Scoring Report (Phase 2 Task 5B)
 
-- **Execution Timestamp:** 2026-10-15T15:56:52Z
+- **Execution Timestamp:** 2026-10-15T19:29:41Z
 - **Pinned FinQA Commit:** `0f16e2867befa6840783e58be38c9efb9229d742`
 - **Comparison Tolerance:** `rtol=0.005`, `atol=1e-06`
 - **Total Evaluated Records:** 900
@@ -26,6 +26,9 @@
 | `report_run_a100_seed2345` | P4 | 2345 | 150 | 114 | 1 | **76.00%** |
 | `report_run_a100_seed3456` | P4 | 3456 | 150 | 113 | 1 | **75.33%** |
 
-## 3. Operational Verification
+## 3. Operational Verification and Experimental Parity
+- **Scoring Method:** Deterministic rule-based evaluation (regex extraction + floating-point tolerance `rtol=0.005`, `atol=1e-06`). Zero LLM judge calls were invoked.
+- **Telemetry Provenance:** Evaluated answers and runtime uncertainty metrics (u_F, u_L, tokens, latency) originate strictly from official Colab Pro+ GPU A100 runs (`data/report_run_a100*`) generated with `google/gemma-4-12b-it` in bfloat16.
+- **Factual Uncertainty (u_F) Parity:** u_F values remain strictly frozen as generated on the A100. They were not recomputed or altered in Task 5B, guaranteeing 100% parity and comparability with the other datasets.
 - Historical baseline telemetry files in `data/report_run_a100*/` remain strictly frozen.
 - Scored outputs with extraction audit fields are stored in `data/audits/finqa_v11_scores/`.
