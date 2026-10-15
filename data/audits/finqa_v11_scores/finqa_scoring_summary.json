@@ -1,0 +1,102 @@
+{
+  "task": "Phase 2 Task 5B: FinQA 900 Automated Scoring Batch",
+  "timestamp": "2026-10-15T15:56:52Z",
+  "pinned_finqa_commit": "0f16e2867befa6840783e58be38c9efb9229d742",
+  "tolerance": {
+    "relative": 0.005,
+    "absolute": 1e-06
+  },
+  "files_evaluated": [
+    {
+      "file": "finqa_pattern1.jsonl",
+      "input_path": "data/report_run_a100/finqa_pattern1.jsonl",
+      "output_path": "data/audits/finqa_v11_scores/report_run_a100/finqa_pattern1.jsonl",
+      "total": 150,
+      "matches": 87,
+      "accuracy_pct": 58.0,
+      "abstentions": 6,
+      "pattern": 1,
+      "seed": 1234
+    },
+    {
+      "file": "finqa_pattern2.jsonl",
+      "input_path": "data/report_run_a100/finqa_pattern2.jsonl",
+      "output_path": "data/audits/finqa_v11_scores/report_run_a100/finqa_pattern2.jsonl",
+      "total": 150,
+      "matches": 93,
+      "accuracy_pct": 62.0,
+      "abstentions": 8,
+      "pattern": 2,
+      "seed": 1234
+    },
+    {
+      "file": "finqa_pattern3.jsonl",
+      "input_path": "data/report_run_a100/finqa_pattern3.jsonl",
+      "output_path": "data/audits/finqa_v11_scores/report_run_a100/finqa_pattern3.jsonl",
+      "total": 150,
+      "matches": 94,
+      "accuracy_pct": 62.67,
+      "abstentions": 2,
+      "pattern": 3,
+      "seed": 1234
+    },
+    {
+      "file": "finqa_pattern4.jsonl",
+      "input_path": "data/report_run_a100/finqa_pattern4.jsonl",
+      "output_path": "data/audits/finqa_v11_scores/report_run_a100/finqa_pattern4.jsonl",
+      "total": 150,
+      "matches": 114,
+      "accuracy_pct": 76.0,
+      "abstentions": 1,
+      "pattern": 4,
+      "seed": 1234
+    },
+    {
+      "file": "finqa_pattern4.jsonl",
+      "input_path": "data/report_run_a100_seed2345/finqa_pattern4.jsonl",
+      "output_path": "data/audits/finqa_v11_scores/report_run_a100_seed2345/finqa_pattern4.jsonl",
+      "total": 150,
+      "matches": 114,
+      "accuracy_pct": 76.0,
+      "abstentions": 1,
+      "pattern": 4,
+      "seed": 2345
+    },
+    {
+      "file": "finqa_pattern4.jsonl",
+      "input_path": "data/report_run_a100_seed3456/finqa_pattern4.jsonl",
+      "output_path": "data/audits/finqa_v11_scores/report_run_a100_seed3456/finqa_pattern4.jsonl",
+      "total": 150,
+      "matches": 113,
+      "accuracy_pct": 75.33,
+      "abstentions": 1,
+      "pattern": 4,
+      "seed": 3456
+    }
+  ],
+  "overall_total": 900,
+  "overall_matches": 615,
+  "overall_accuracy_pct": 68.33,
+  "pattern_summary": {
+    "Pattern_1": {
+      "total": 150,
+      "matches": 87,
+      "accuracy_pct": 58.0
+    },
+    "Pattern_2": {
+      "total": 150,
+      "matches": 93,
+      "accuracy_pct": 62.0
+    },
+    "Pattern_3": {
+      "total": 150,
+      "matches": 94,
+      "accuracy_pct": 62.67
+    },
+    "Pattern_4": {
+      "total": 450,
+      "matches": 341,
+      "accuracy_pct": 75.78
+    }
+  }
+}
