@@ -3,10 +3,10 @@
 Recompute u_F on Extracted Answer Spans for Pattern 4 (Phase 2 Task 4).
 
 Processes:
-- Datasets: PopQA, IFEval, LiveBench
+- Datasets: PopQA, IFEval, LiveBench, FinQA
 - Pattern: P4 (Multi-Perspective Deliberation)
 - Seeds: 1234, 2345, 3456
-- Total items: 3 datasets * 3 seeds * 150 items = 1,350 items
+- Total items: 4 datasets * 3 seeds * 150 items = 1,800 items
 
 Operational Rules:
 1. Extract answer span using extract_answer_span (Doc 08).
@@ -38,7 +38,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("recompute_p4_uf")
 
-DATASETS = ["popqa", "ifeval", "livebench"]
+DATASETS = ["popqa", "ifeval", "livebench", "finqa"]
 SEEDS = [1234, 2345, 3456]
 
 
@@ -139,6 +139,14 @@ def recompute_file(
     approved_count = 0
     claims_raw_total = 0
     claims_span_total = 0
+    u_f_valid_count = 0
+    u_f_none_count = 0
+    none_reasons = {
+        "needs_revision": 0,
+        "zero_claims": 0,
+        "empty_span": 0,
+        "judge_parse_error": 0,
+    }
 
     recomputed_records: List[Dict[str, Any]] = []
 
@@ -155,12 +163,28 @@ def recompute_file(
         claims_raw_total += updated["raw_claims_count"]
         claims_span_total += updated["span_claims_count"]
 
+        if updated.get("u_F") is not None:
+            u_f_valid_count += 1
+        else:
+            u_f_none_count += 1
+            if updated.get("span_category") == "needs_revision":
+                none_reasons["needs_revision"] += 1
+            elif updated.get("judge_parse_error"):
+                none_reasons["judge_parse_error"] += 1
+            elif not updated.get("extracted_answer_span", "").strip():
+                none_reasons["empty_span"] += 1
+            elif updated.get("span_claims_count", 0) == 0:
+                none_reasons["zero_claims"] += 1
+
+    u_f_none_pct = round((u_f_none_count / processed_count * 100.0), 2) if processed_count > 0 else 0.0
+    u_f_valid_pct = round((u_f_valid_count / processed_count * 100.0), 2) if processed_count > 0 else 0.0
+
     with open(output_path, "w", encoding="utf-8") as f:
         for rec in recomputed_records:
             f.write(json.dumps(rec) + "\n")
 
     logger.info(
-        "Finished %s -> %s (Processed: %d, Approved: %d, NeedsRevision: %d, RawClaims: %d, SpanClaims: %d)",
+        "Finished %s -> %s (Processed: %d, Approved: %d, NeedsRevision: %d, RawClaims: %d, SpanClaims: %d, u_F Valid: %d, u_F None: %d [%.1f%%])",
         input_path.name,
         output_path.name,
         processed_count,
@@ -168,6 +192,9 @@ def recompute_file(
         needs_revision_count,
         claims_raw_total,
         claims_span_total,
+        u_f_valid_count,
+        u_f_none_count,
+        u_f_none_pct,
     )
 
     return {
@@ -178,6 +205,11 @@ def recompute_file(
         "needs_revision": needs_revision_count,
         "raw_claims_total": claims_raw_total,
         "span_claims_total": claims_span_total,
+        "u_f_valid_count": u_f_valid_count,
+        "u_f_valid_pct": u_f_valid_pct,
+        "u_f_none_count": u_f_none_count,
+        "u_f_none_pct": u_f_none_pct,
+        "u_f_none_reasons": none_reasons,
     }
 
 
@@ -202,6 +234,10 @@ def run_recompute_batch(
         "overall_records": 0,
         "overall_raw_claims": 0,
         "overall_span_claims": 0,
+        "overall_u_f_valid": 0,
+        "overall_u_f_none": 0,
+        "overall_u_f_none_pct": 0.0,
+        "cell_uf_stats": {},
     }
 
     for seed in target_seeds:
@@ -219,16 +255,42 @@ def run_recompute_batch(
                 client=client,
                 sample_size=sample_size,
             )
+            cell_key = f"{ds}_seed{seed}"
+            res["dataset"] = ds
+            res["seed"] = seed
             summary["files_processed"].append(res)
             summary["overall_records"] += res.get("processed", 0)
             summary["overall_raw_claims"] += res.get("raw_claims_total", 0)
             summary["overall_span_claims"] += res.get("span_claims_total", 0)
+            summary["overall_u_f_valid"] += res.get("u_f_valid_count", 0)
+            summary["overall_u_f_none"] += res.get("u_f_none_count", 0)
+            summary["cell_uf_stats"][cell_key] = {
+                "dataset": ds,
+                "seed": seed,
+                "folder": seed_folder,
+                "file": res.get("file"),
+                "total": res.get("total", 0),
+                "processed": res.get("processed", 0),
+                "u_f_valid_count": res.get("u_f_valid_count", 0),
+                "u_f_valid_pct": res.get("u_f_valid_pct", 0.0),
+                "u_f_none_count": res.get("u_f_none_count", 0),
+                "u_f_none_pct": res.get("u_f_none_pct", 0.0),
+                "u_f_none_reasons": res.get("u_f_none_reasons", {}),
+            }
 
     if summary["overall_records"] == 0:
         logger.warning(
             "No records were processed. Verify that base-dir '%s' contains the expected seed directories: %s",
             base_dir,
             [get_seed_dir_name(s) for s in target_seeds],
+        )
+
+    if summary["overall_records"] > 0:
+        summary["overall_u_f_none_pct"] = round(
+            summary["overall_u_f_none"] / summary["overall_records"] * 100.0, 2
+        )
+        summary["overall_u_f_valid_pct"] = round(
+            summary["overall_u_f_valid"] / summary["overall_records"] * 100.0, 2
         )
 
     import subprocess
@@ -278,6 +340,10 @@ def run_recompute_batch(
         "datasets": target_datasets,
         "seeds": target_seeds,
         "overall_records": summary["overall_records"],
+        "overall_u_f_valid": summary["overall_u_f_valid"],
+        "overall_u_f_none": summary["overall_u_f_none"],
+        "overall_u_f_none_pct": summary.get("overall_u_f_none_pct", 0.0),
+        "cell_uf_stats": summary["cell_uf_stats"],
     }
 
     summary["manifest"] = manifest_data
