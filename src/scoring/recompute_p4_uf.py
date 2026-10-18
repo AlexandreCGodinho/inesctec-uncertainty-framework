@@ -17,8 +17,12 @@ Operational Rules:
    - If span is non-empty, evaluate claims strictly on the extracted span.
    - If claims list is empty, u_F = None (Phase 1 zero-claims fallback).
    - If claims exist, call LLM judge (google/gemma-4-12b-it) to score claims.
-4. Baseline data files (data/report_run_a100*/) remain frozen and untouched.
-5. All recomputed records are saved to an isolated audit directory.
+4. Reference Conditioning (Experimental Parity with P1-P3 Baseline):
+   - PopQA, LiveBench, FinQA: reference-conditioned (joined by query_id).
+   - IFEval: reference-free (per benchmark instruction-following design).
+   - Missing reference on conditioned datasets fails loudly with KeyError.
+5. Baseline data files (data/report_run_a100*/) remain frozen and untouched.
+6. All recomputed records are saved to an isolated audit directory.
 """
 
 import argparse
@@ -29,7 +33,12 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from src.metrics.u_F import JudgeParseError, _split_claims, compute_u_F
+from src.metrics.u_F import (
+    JudgeParseError,
+    _split_claims,
+    compute_u_F,
+    format_judge_prompt,
+)
 from src.scoring.answer_span import extract_answer_span
 
 logging.basicConfig(
@@ -47,6 +56,103 @@ def get_seed_dir_name(seed: int) -> str:
     if seed == 1234:
         return "report_run_a100"
     return f"report_run_a100_seed{seed}"
+
+
+def load_dataset_references(
+    dataset_name: str, base_dir: str = "data"
+) -> Dict[str, str]:
+    """
+    Load query_id -> reference mapping for a dataset matching baseline rules.
+
+    - popqa: akariasai/PopQA (key: id, val: obj canonical answer).
+    - finqa: test.json from official pinned commit 0f16e28 (key: id, val: qa.answer).
+    - livebench: live_bench/reasoning load_questions (key: question_id, val: ground_truth or answer).
+    - ifeval: reference-free by definition, returns empty mapping {}.
+    """
+    dataset_name = dataset_name.lower().strip()
+    if dataset_name == "ifeval":
+        # IFEval runs reference-free in baseline pipeline
+        return {}
+
+    base_path = Path(base_dir)
+
+    if dataset_name == "finqa":
+        # Check local cache first
+        cache_candidates = [
+            base_path / "finqa_references_cache.json",
+            Path("data/finqa_references_cache.json"),
+        ]
+        raw_data = None
+        for cand in cache_candidates:
+            if cand.exists():
+                logger.info("Loading FinQA references from local cache: %s", cand)
+                with open(cand, "r", encoding="utf-8") as f:
+                    raw_data = json.load(f)
+                break
+
+        if raw_data is None:
+            import urllib.request
+            logger.info("Local FinQA cache not found. Fetching official test.json from GitHub (commit 0f16e28)...")
+            url = "https://raw.githubusercontent.com/czyssrs/FinQA/0f16e2867befa6840783e58be38c9efb9229d742/dataset/test.json"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req) as resp:
+                raw_data = json.loads(resp.read().decode("utf-8"))
+
+        ref_map: Dict[str, str] = {}
+        for item in raw_data:
+            qid = str(item.get("id"))
+            ans = str(item.get("qa", {}).get("answer", ""))
+            ref_map[qid] = ans
+        return ref_map
+
+    if dataset_name == "popqa":
+        # Check local cache first
+        cache_candidates = [
+            base_path / "popqa_references_cache.json",
+            Path("data/popqa_references_cache.json"),
+        ]
+        for cand in cache_candidates:
+            if cand.exists():
+                logger.info("Loading PopQA references from local cache: %s", cand)
+                with open(cand, "r", encoding="utf-8") as f:
+                    return json.load(f)
+
+        import datasets as hf_datasets
+        logger.info("Loading PopQA dataset from HuggingFace (akariasai/PopQA)...")
+        ds = hf_datasets.load_dataset("akariasai/PopQA")
+        split = ds["train"] if "train" in ds else ds["test"] if "test" in ds else ds[list(ds.keys())[0]]
+        ref_map = {}
+        for row in split:
+            qid = str(row.get("id"))
+            ref = str(row.get("obj") or row.get("answer") or "")
+            ref_map[qid] = ref
+        return ref_map
+
+    if dataset_name == "livebench":
+        # Check local cache first
+        cache_candidates = [
+            base_path / "livebench_references_cache.json",
+            Path("data/livebench_references_cache.json"),
+        ]
+        for cand in cache_candidates:
+            if cand.exists():
+                logger.info("Loading LiveBench references from local cache: %s", cand)
+                with open(cand, "r", encoding="utf-8") as f:
+                    return json.load(f)
+
+        import livebench.common as lb
+        logger.info("Loading LiveBench questions via official harness...")
+        categories, _ = lb.get_categories_tasks(bench_name="live_bench/reasoning")
+        ref_map = {}
+        for cat_name, cat_dataset in categories.items():
+            questions = lb.load_questions(cat_dataset, livebench_releases=lb.LIVE_BENCH_RELEASES, task_name=None)
+            for q in questions:
+                qid = str(q.get("question_id", ""))
+                ref = str(q.get("ground_truth", q.get("answer", "")))
+                ref_map[qid] = ref
+        return ref_map
+
+    raise ValueError(f"Unknown dataset: {dataset_name}")
 
 
 def recompute_single_record(
@@ -105,6 +211,7 @@ def recompute_single_record(
     updated["span_category"] = category
     updated["raw_claims_count"] = len(raw_claims)
     updated["span_claims_count"] = len(span_claims)
+    updated["reference_conditioned"] = bool(reference and reference.strip())
     updated["u_F_recomputed"] = True
 
     return updated
@@ -114,6 +221,8 @@ def recompute_file(
     input_path: Path,
     output_path: Path,
     client: Any,
+    dataset_name: str = "",
+    references: Optional[Dict[str, str]] = None,
     sample_size: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
@@ -134,6 +243,9 @@ def recompute_file(
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    ref_dict = references or {}
+    is_conditioned = dataset_name.lower().strip() != "ifeval"
+
     processed_count = 0
     needs_revision_count = 0
     approved_count = 0
@@ -151,7 +263,18 @@ def recompute_file(
     recomputed_records: List[Dict[str, Any]] = []
 
     for rec in records:
-        updated = recompute_single_record(rec, client)
+        qid = str(rec.get("query_id", ""))
+        if is_conditioned:
+            if qid not in ref_dict:
+                raise KeyError(
+                    f"Query ID '{qid}' from {input_path.name} not found in references "
+                    f"for dataset '{dataset_name}'. Loud failure required."
+                )
+            ref = ref_dict[qid]
+        else:
+            ref = ""
+
+        updated = recompute_single_record(rec, client, reference=ref)
         recomputed_records.append(updated)
         processed_count += 1
 
@@ -184,10 +307,11 @@ def recompute_file(
             f.write(json.dumps(rec) + "\n")
 
     logger.info(
-        "Finished %s -> %s (Processed: %d, Approved: %d, NeedsRevision: %d, RawClaims: %d, SpanClaims: %d, u_F Valid: %d, u_F None: %d [%.1f%%])",
+        "Finished %s -> %s (Processed: %d, Conditioned: %s, Approved: %d, NeedsRevision: %d, RawClaims: %d, SpanClaims: %d, u_F Valid: %d, u_F None: %d [%.1f%%])",
         input_path.name,
         output_path.name,
         processed_count,
+        is_conditioned,
         approved_count,
         needs_revision_count,
         claims_raw_total,
@@ -199,6 +323,8 @@ def recompute_file(
 
     return {
         "file": input_path.name,
+        "dataset": dataset_name,
+        "reference_conditioned": is_conditioned,
         "total": len(records),
         "processed": processed_count,
         "approved": approved_count,
@@ -221,11 +347,22 @@ def run_recompute_batch(
     seeds: Optional[List[int]] = None,
     sample_size: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Run full recomputation batch across datasets and seeds."""
+    """Run full recomputation batch across datasets and seeds with reference conditioning."""
     target_datasets = datasets or DATASETS
     target_seeds = seeds or SEEDS
     base_path = Path(base_dir)
     out_path = Path(output_dir)
+
+    # 1. Preload reference mappings for each target dataset
+    references_by_dataset: Dict[str, Dict[str, str]] = {}
+    for ds in target_datasets:
+        references_by_dataset[ds] = load_dataset_references(ds, base_dir=base_dir)
+        logger.info(
+            "Loaded %d reference records for dataset '%s' (conditioned: %s)",
+            len(references_by_dataset[ds]),
+            ds,
+            ds.lower().strip() != "ifeval",
+        )
 
     summary: Dict[str, Any] = {
         "datasets": target_datasets,
@@ -253,6 +390,8 @@ def run_recompute_batch(
                 input_path=in_file,
                 output_path=out_file,
                 client=client,
+                dataset_name=ds,
+                references=references_by_dataset.get(ds, {}),
                 sample_size=sample_size,
             )
             cell_key = f"{ds}_seed{seed}"
@@ -269,6 +408,7 @@ def run_recompute_batch(
                 "seed": seed,
                 "folder": seed_folder,
                 "file": res.get("file"),
+                "reference_conditioned": res.get("reference_conditioned", ds != "ifeval"),
                 "total": res.get("total", 0),
                 "processed": res.get("processed", 0),
                 "u_f_valid_count": res.get("u_f_valid_count", 0),
@@ -312,17 +452,18 @@ def run_recompute_batch(
     except Exception:
         pass
 
-    judge_prompt_template = (
-        "Claims:\n{claims_text}\n\n"
-        "Assess each claim's factual accuracy using your own knowledge:\n"
-        "  -1 = contradicted\n"
-        "   0 = not enough information\n"
-        "  +0.5 = partially supported\n"
-        "  +1 = fully supported\n\n"
-        "You MUST return a valid JSON object mapping the claim index (as string) to its numeric score.\n"
-        "Example: {\"0\": 1, \"1\": -1, \"2\": 0.5}\n\n"
-        "JSON:"
-    )
+    judge_prompt_templates = {
+        "reference_conditioned": format_judge_prompt(["{claim_text}"], reference="{reference}"),
+        "reference_free": format_judge_prompt(["{claim_text}"], reference=""),
+    }
+
+    dataset_reference_status = {
+        ds: {
+            "reference_conditioned": ds != "ifeval",
+            "references_loaded": len(references_by_dataset.get(ds, {})),
+        }
+        for ds in target_datasets
+    }
 
     manifest_data = {
         "commit": commit_sha,
@@ -336,7 +477,9 @@ def run_recompute_batch(
             "gpu-memory-utilization": 0.90,
             "dtype": "bfloat16",
         },
-        "judge_prompt": judge_prompt_template,
+        "dataset_reference_status": dataset_reference_status,
+        "judge_prompt_templates": judge_prompt_templates,
+        "judge_prompt": judge_prompt_templates["reference_conditioned"],
         "datasets": target_datasets,
         "seeds": target_seeds,
         "overall_records": summary["overall_records"],
@@ -367,7 +510,7 @@ if __name__ == "__main__":
     from src.llm_client import LLMClient, check_server_available
 
     parser = argparse.ArgumentParser(
-        description="Recompute u_F on extracted answer spans for Pattern 4."
+        description="Recompute u_F on extracted answer spans for Pattern 4 (with reference conditioning)."
     )
     parser.add_argument(
         "--base-dir",
@@ -376,7 +519,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--output-dir",
-        default="data/audits/recomputed_uf_v11",
+        default="data/audits/audit_recomputed_uf_v11",
         help="Output directory where recomputed files will be written.",
     )
     parser.add_argument(
@@ -389,7 +532,7 @@ if __name__ == "__main__":
         "--datasets",
         nargs="+",
         default=DATASETS,
-        help="Datasets to process (default: popqa ifeval livebench).",
+        help="Datasets to process (default: popqa ifeval livebench finqa).",
     )
     parser.add_argument(
         "--seeds",
