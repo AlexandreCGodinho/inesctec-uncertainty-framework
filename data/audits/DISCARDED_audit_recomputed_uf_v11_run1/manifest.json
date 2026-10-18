@@ -1,4 +1,8 @@
 {
+  "status": "DISCARDED",
+  "discarded_at": "2026-10-18T17:53:00+01:00",
+  "discard_reason": "Methodological asymmetry: initial P4 recomputation was executed reference-free across all datasets, omitting ground-truth references for PopQA, LiveBench, and FinQA. Replaced by reference-conditioned batch per Prof. Álvaro and PR #62 code review.",
+  "superseded_by": "data/audits/audit_recomputed_uf_v11",
   "commit": "88f10a9eaee33dd153907ca3165cf8385ec6b40d",
   "tag": "v10-35-g88f10a9",
   "execution_timestamp": "2026-10-17T13:10:54Z",
