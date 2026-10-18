@@ -6,7 +6,7 @@
 - **Total Evaluated Records:** 900
 - **Overall Accurate Matches:** 615 / 900 (68.33%)
 
-## 1. Summary by Architectural Pattern
+## 1. Summary by Pattern
 
 | Pattern | Description | Total Items | Matches | Accuracy (%) |
 |---|---|---|---|---|
@@ -14,6 +14,9 @@
 | P2 (Role-Separated Pipeline) | Pattern_2 | 150 | 93 | **62.00%** |
 | P3 (Reflexive Single Agent) | Pattern_3 | 150 | 94 | **62.67%** |
 | P4 (Multi-Perspective Deliberation) | Pattern_4 | 450 | 341 | **75.78%** |
+
+> **Methodological Note on Sample Asymmetry & Metric Definition:**
+> Patterns 1 to 3 are evaluated on a single seed (`seed: 1234`, 150 records per pattern), whereas Pattern 4 (Multi-Perspective Deliberation) is evaluated across three seeds (`seeds: 1234, 2345, 3456`, 450 total records). FinQA accuracy is a deterministic numerical precision metric with relative tolerance (0.5%) against ground-truth answers. It is conceptually and functionally distinct from factual uncertainty ($u_F$, atomic claims evaluated on natural-language spans), and the two metrics are not interchangeable.
 
 ## 2. Detailed Per-File Telemetry Breakdown
 

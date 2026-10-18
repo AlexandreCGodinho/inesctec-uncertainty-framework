@@ -62,16 +62,26 @@ TARGET_RUNS = [
 ]
 
 
-def load_finqa_references(cache_path: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
+def load_finqa_references(
+    cache_path: Optional[Path] = None, allow_fetch: bool = False
+) -> Dict[str, Dict[str, Any]]:
     """
     Load official FinQA references keyed by query_id (id).
-    Uses local cache if available, otherwise downloads from pinned GitHub commit.
+    Uses local cache if available. If cache is missing, requires allow_fetch=True
+    to download from pinned GitHub commit; otherwise raises FileNotFoundError.
     """
     if cache_path and cache_path.exists():
         logger.info("Loading cached FinQA references from %s", cache_path)
         with open(cache_path, "r", encoding="utf-8") as f:
             data = json.load(f)
             return {item["id"]: item.get("qa", {}) for item in data if "id" in item}
+
+    if not allow_fetch:
+        raise FileNotFoundError(
+            f"FinQA references cache not found at '{cache_path}'. "
+            f"Scoring is offline by default. Provide the local cache file or pass --allow-fetch "
+            f"to download from pinned commit {PINNED_FINQA_COMMIT}."
+        )
 
     logger.info("Fetching canonical FinQA test set from %s", FINQA_TEST_URL)
     req = urllib.request.Request(FINQA_TEST_URL, headers={"User-Agent": "Mozilla/5.0"})
@@ -112,7 +122,11 @@ def score_single_file(
 
     for rec in records:
         qid = str(rec.get("query_id", ""))
-        ref = references.get(qid, {})
+        if qid not in references:
+            raise KeyError(
+                f"Query ID '{qid}' from '{input_file.name}' not found in FinQA references cache."
+            )
+        ref = references[qid]
 
         score_res = finqa_numeric_scorer(rec, ref)
         match_val = float(score_res.get("match", 0.0))
@@ -165,13 +179,14 @@ def run_finqa_scoring_batch(
     base_dir: str = "data",
     output_dir: str = "data/audits/finqa_v11_scores",
     cache_path: Optional[str] = "data/finqa_references_cache.json",
+    allow_fetch: bool = False,
 ) -> Dict[str, Any]:
     """Execute full 900-item scoring batch."""
     base_path = Path(base_dir)
     out_path = Path(output_dir)
     c_path = Path(cache_path) if cache_path else None
 
-    references = load_finqa_references(c_path)
+    references = load_finqa_references(c_path, allow_fetch=allow_fetch)
     logger.info("Loaded %d FinQA reference entries.", len(references))
 
     summary: Dict[str, Any] = {
@@ -256,7 +271,7 @@ def _generate_markdown_report(summary: Dict[str, Any], output_path: Path) -> Non
         f"- **Total Evaluated Records:** {summary.get('overall_total')}",
         f"- **Overall Accurate Matches:** {summary.get('overall_matches')} / {summary.get('overall_total')} ({summary.get('overall_accuracy_pct')}%)",
         "",
-        "## 1. Summary by Architectural Pattern",
+        "## 1. Summary by Pattern",
         "",
         "| Pattern | Description | Total Items | Matches | Accuracy (%) |",
         "|---|---|---|---|---|",
@@ -277,6 +292,9 @@ def _generate_markdown_report(summary: Dict[str, Any], output_path: Path) -> Non
         lines.append(f"| {p_name} | {p_key} | {tot} | {m} | **{acc:.2f}%** |")
 
     lines.extend([
+        "",
+        "> **Methodological Note on Sample Asymmetry & Metric Definition:**",
+        "> Patterns 1 to 3 are evaluated on a single seed (`seed: 1234`, 150 records per pattern), whereas Pattern 4 (Multi-Perspective Deliberation) is evaluated across three seeds (`seeds: 1234, 2345, 3456`, 450 total records). FinQA accuracy is a deterministic numerical precision metric with relative tolerance (0.5%) against ground-truth answers. It is conceptually and functionally distinct from factual uncertainty ($u_F$, atomic claims evaluated on natural-language spans), and the two metrics are not interchangeable.",
         "",
         "## 2. Detailed Per-File Telemetry Breakdown",
         "",
@@ -315,10 +333,16 @@ if __name__ == "__main__":
     parser.add_argument("--base-dir", default="data", help="Base input directory containing report_run_a100*")
     parser.add_argument("--output-dir", default="data/audits/finqa_v11_scores", help="Output audit directory")
     parser.add_argument("--cache-path", default="data/finqa_references_cache.json", help="Path to cache references")
+    parser.add_argument(
+        "--allow-fetch",
+        action="store_true",
+        help="Allow downloading canonical FinQA test set from GitHub if local cache is absent.",
+    )
 
     args = parser.parse_args()
     run_finqa_scoring_batch(
         base_dir=args.base_dir,
         output_dir=args.output_dir,
         cache_path=args.cache_path,
+        allow_fetch=args.allow_fetch,
     )

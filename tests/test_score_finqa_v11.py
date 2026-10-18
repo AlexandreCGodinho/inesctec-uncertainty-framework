@@ -73,4 +73,31 @@ def test_generate_markdown_report(tmp_path: Path):
     content = md_file.read_text(encoding="utf-8")
     assert "FinQA 900 Automated Scoring Report" in content
     assert "61.11%" in content
+    assert "Summary by Pattern" in content
+    assert "Methodological Note on Sample Asymmetry" in content
     assert "P1 (Governed Workflow)" in content
+
+
+def test_load_finqa_references_fails_offline_without_cache(tmp_path: Path):
+    from scripts.score_finqa_v11 import load_finqa_references
+
+    missing_cache = tmp_path / "nonexistent_cache.json"
+    with pytest.raises(FileNotFoundError) as exc_info:
+        load_finqa_references(cache_path=missing_cache, allow_fetch=False)
+
+    msg = str(exc_info.value)
+    assert "Scoring is offline by default" in msg
+    assert "--allow-fetch" in msg
+
+
+def test_score_single_file_raises_on_missing_query_id(tmp_path: Path):
+    in_file = tmp_path / "test_missing.jsonl"
+    out_file = tmp_path / "out_missing.jsonl"
+    with open(in_file, "w", encoding="utf-8") as f:
+        f.write(json.dumps({"query_id": "unknown_query_999", "final_answer": "42"}) + "\n")
+
+    with pytest.raises(KeyError) as exc_info:
+        score_single_file(in_file, out_file, references={})
+
+    assert "unknown_query_999" in str(exc_info.value)
+
