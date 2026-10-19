@@ -1,0 +1,37 @@
+# FinQA 900 Automated Scoring Report (Phase 2 Task 5B)
+
+- **Execution Timestamp:** 2026-10-15T19:29:41Z
+- **Pinned FinQA Commit:** `0f16e2867befa6840783e58be38c9efb9229d742`
+- **Comparison Tolerance:** `rtol=0.005`, `atol=1e-06`
+- **Total Evaluated Records:** 900
+- **Overall Accurate Matches:** 615 / 900 (68.33%)
+
+## 1. Summary by Pattern
+
+| Pattern | Description | Total Items | Matches | Accuracy (%) |
+|---|---|---|---|---|
+| P1 (Governed Workflow) | Pattern_1 | 150 | 87 | **58.00%** |
+| P2 (Role-Separated Pipeline) | Pattern_2 | 150 | 93 | **62.00%** |
+| P3 (Reflexive Single Agent) | Pattern_3 | 150 | 94 | **62.67%** |
+| P4 (Multi-Perspective Deliberation) | Pattern_4 | 450 | 341 | **75.78%** |
+
+> **Methodological Note on Sample Asymmetry & Metric Definition:**
+> Patterns 1 to 3 are evaluated on a single seed (`seed: 1234`, 150 records per pattern), whereas Pattern 4 (Multi-Perspective Deliberation) is evaluated across three seeds (`seeds: 1234, 2345, 3456`, 450 total records). FinQA accuracy is a deterministic numerical precision metric with relative tolerance (0.5%) against ground-truth answers. It is conceptually and functionally distinct from factual uncertainty ($u_F$, atomic claims evaluated on natural-language spans), and the two metrics are not interchangeable.
+
+## 2. Detailed Per-File Telemetry Breakdown
+
+| Seed Directory | Pattern | Seed | Records | Matches | Abstentions | Accuracy (%) |
+|---|---|---|---|---|---|---|
+| `report_run_a100` | P1 | 1234 | 150 | 87 | 6 | **58.00%** |
+| `report_run_a100` | P2 | 1234 | 150 | 93 | 8 | **62.00%** |
+| `report_run_a100` | P3 | 1234 | 150 | 94 | 2 | **62.67%** |
+| `report_run_a100` | P4 | 1234 | 150 | 114 | 1 | **76.00%** |
+| `report_run_a100_seed2345` | P4 | 2345 | 150 | 114 | 1 | **76.00%** |
+| `report_run_a100_seed3456` | P4 | 3456 | 150 | 113 | 1 | **75.33%** |
+
+## 3. Operational Verification and Experimental Parity
+- **Scoring Method:** Deterministic rule-based evaluation (regex extraction + floating-point tolerance `rtol=0.005`, `atol=1e-06`). Zero LLM judge calls were invoked.
+- **Telemetry Provenance:** Evaluated answers and runtime uncertainty metrics (u_F, u_L, tokens, latency) originate strictly from official Colab Pro+ GPU A100 runs (`data/report_run_a100*`) generated with `google/gemma-4-12b-it` in bfloat16.
+- **Factual Uncertainty (u_F) Parity:** u_F values remain strictly frozen as generated on the A100. They were not recomputed or altered in Task 5B, guaranteeing 100% parity and comparability with the other datasets.
+- Historical baseline telemetry files in `data/report_run_a100*/` remain strictly frozen.
+- Scored outputs with extraction audit fields are stored in `data/audits/finqa_v11_scores/`.
