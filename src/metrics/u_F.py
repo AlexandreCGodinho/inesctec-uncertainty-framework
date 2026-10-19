@@ -69,9 +69,8 @@ def _estimate_severity(claim: str) -> float:
     return 1.0 + 0.5 * count
 
 
-def _judge_claims_batch(
-    claims: list[str], reference: str, llm_judge_callable
-) -> dict:
+def format_judge_prompt(claims: list[str], reference: str = "") -> str:
+    """Construct the exact factual judge prompt for claims, conditioned on reference if non-empty."""
     claims_text = "\n".join(f"{i}: {c}" for i, c in enumerate(claims))
     if reference.strip():
         prompt = (
@@ -94,6 +93,13 @@ def _judge_claims_batch(
         f"Example: {{\"0\": 1, \"1\": -1, \"2\": 0.5}}\n\n"
         f"JSON:"
     )
+    return prompt
+
+
+def _judge_claims_batch(
+    claims: list[str], reference: str, llm_judge_callable
+) -> dict:
+    prompt = format_judge_prompt(claims, reference)
     for attempt in range(2):
         response = llm_judge_callable.call("judge", prompt)
         try:

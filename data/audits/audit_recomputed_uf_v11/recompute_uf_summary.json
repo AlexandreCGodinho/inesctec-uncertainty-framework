@@ -1,0 +1,797 @@
+{
+  "datasets": [
+    "popqa",
+    "ifeval",
+    "livebench",
+    "finqa"
+  ],
+  "seeds": [
+    1234,
+    2345,
+    3456
+  ],
+  "files_processed": [
+    {
+      "file": "popqa_pattern4.jsonl",
+      "dataset": "popqa",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "approved": 133,
+      "needs_revision": 10,
+      "raw_claims_total": 953,
+      "span_claims_total": 540,
+      "u_f_valid_count": 135,
+      "u_f_valid_pct": 90.0,
+      "u_f_none_count": 15,
+      "u_f_none_pct": 10.0,
+      "u_f_none_reasons": {
+        "needs_revision": 10,
+        "zero_claims": 5,
+        "empty_span": 0,
+        "judge_parse_error": 0
+      },
+      "seed": 1234
+    },
+    {
+      "file": "ifeval_pattern4.jsonl",
+      "dataset": "ifeval",
+      "reference_conditioned": false,
+      "total": 150,
+      "processed": 150,
+      "approved": 86,
+      "needs_revision": 2,
+      "raw_claims_total": 1913,
+      "span_claims_total": 1623,
+      "u_f_valid_count": 132,
+      "u_f_valid_pct": 88.0,
+      "u_f_none_count": 18,
+      "u_f_none_pct": 12.0,
+      "u_f_none_reasons": {
+        "needs_revision": 2,
+        "zero_claims": 8,
+        "empty_span": 0,
+        "judge_parse_error": 8
+      },
+      "seed": 1234
+    },
+    {
+      "file": "livebench_pattern4.jsonl",
+      "dataset": "livebench",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "approved": 125,
+      "needs_revision": 6,
+      "raw_claims_total": 3479,
+      "span_claims_total": 767,
+      "u_f_valid_count": 37,
+      "u_f_valid_pct": 24.67,
+      "u_f_none_count": 113,
+      "u_f_none_pct": 75.33,
+      "u_f_none_reasons": {
+        "needs_revision": 6,
+        "zero_claims": 105,
+        "empty_span": 0,
+        "judge_parse_error": 2
+      },
+      "seed": 1234
+    },
+    {
+      "file": "finqa_pattern4.jsonl",
+      "dataset": "finqa",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "approved": 149,
+      "needs_revision": 1,
+      "raw_claims_total": 905,
+      "span_claims_total": 19,
+      "u_f_valid_count": 11,
+      "u_f_valid_pct": 7.33,
+      "u_f_none_count": 139,
+      "u_f_none_pct": 92.67,
+      "u_f_none_reasons": {
+        "needs_revision": 1,
+        "zero_claims": 132,
+        "empty_span": 0,
+        "judge_parse_error": 6
+      },
+      "seed": 1234
+    },
+    {
+      "file": "popqa_pattern4.jsonl",
+      "dataset": "popqa",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "approved": 130,
+      "needs_revision": 11,
+      "raw_claims_total": 914,
+      "span_claims_total": 560,
+      "u_f_valid_count": 136,
+      "u_f_valid_pct": 90.67,
+      "u_f_none_count": 14,
+      "u_f_none_pct": 9.33,
+      "u_f_none_reasons": {
+        "needs_revision": 11,
+        "zero_claims": 3,
+        "empty_span": 0,
+        "judge_parse_error": 0
+      },
+      "seed": 2345
+    },
+    {
+      "file": "ifeval_pattern4.jsonl",
+      "dataset": "ifeval",
+      "reference_conditioned": false,
+      "total": 150,
+      "processed": 150,
+      "approved": 90,
+      "needs_revision": 1,
+      "raw_claims_total": 1866,
+      "span_claims_total": 1547,
+      "u_f_valid_count": 131,
+      "u_f_valid_pct": 87.33,
+      "u_f_none_count": 19,
+      "u_f_none_pct": 12.67,
+      "u_f_none_reasons": {
+        "needs_revision": 1,
+        "zero_claims": 8,
+        "empty_span": 1,
+        "judge_parse_error": 9
+      },
+      "seed": 2345
+    },
+    {
+      "file": "livebench_pattern4.jsonl",
+      "dataset": "livebench",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "approved": 127,
+      "needs_revision": 3,
+      "raw_claims_total": 3328,
+      "span_claims_total": 773,
+      "u_f_valid_count": 39,
+      "u_f_valid_pct": 26.0,
+      "u_f_none_count": 111,
+      "u_f_none_pct": 74.0,
+      "u_f_none_reasons": {
+        "needs_revision": 3,
+        "zero_claims": 106,
+        "empty_span": 0,
+        "judge_parse_error": 2
+      },
+      "seed": 2345
+    },
+    {
+      "file": "finqa_pattern4.jsonl",
+      "dataset": "finqa",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "approved": 149,
+      "needs_revision": 1,
+      "raw_claims_total": 943,
+      "span_claims_total": 27,
+      "u_f_valid_count": 15,
+      "u_f_valid_pct": 10.0,
+      "u_f_none_count": 135,
+      "u_f_none_pct": 90.0,
+      "u_f_none_reasons": {
+        "needs_revision": 1,
+        "zero_claims": 127,
+        "empty_span": 0,
+        "judge_parse_error": 7
+      },
+      "seed": 2345
+    },
+    {
+      "file": "popqa_pattern4.jsonl",
+      "dataset": "popqa",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "approved": 136,
+      "needs_revision": 7,
+      "raw_claims_total": 851,
+      "span_claims_total": 490,
+      "u_f_valid_count": 138,
+      "u_f_valid_pct": 92.0,
+      "u_f_none_count": 12,
+      "u_f_none_pct": 8.0,
+      "u_f_none_reasons": {
+        "needs_revision": 7,
+        "zero_claims": 5,
+        "empty_span": 0,
+        "judge_parse_error": 0
+      },
+      "seed": 3456
+    },
+    {
+      "file": "ifeval_pattern4.jsonl",
+      "dataset": "ifeval",
+      "reference_conditioned": false,
+      "total": 150,
+      "processed": 150,
+      "approved": 95,
+      "needs_revision": 3,
+      "raw_claims_total": 1863,
+      "span_claims_total": 1478,
+      "u_f_valid_count": 123,
+      "u_f_valid_pct": 82.0,
+      "u_f_none_count": 27,
+      "u_f_none_pct": 18.0,
+      "u_f_none_reasons": {
+        "needs_revision": 3,
+        "zero_claims": 10,
+        "empty_span": 1,
+        "judge_parse_error": 13
+      },
+      "seed": 3456
+    },
+    {
+      "file": "livebench_pattern4.jsonl",
+      "dataset": "livebench",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "approved": 122,
+      "needs_revision": 5,
+      "raw_claims_total": 3494,
+      "span_claims_total": 908,
+      "u_f_valid_count": 40,
+      "u_f_valid_pct": 26.67,
+      "u_f_none_count": 110,
+      "u_f_none_pct": 73.33,
+      "u_f_none_reasons": {
+        "needs_revision": 5,
+        "zero_claims": 104,
+        "empty_span": 0,
+        "judge_parse_error": 1
+      },
+      "seed": 3456
+    },
+    {
+      "file": "finqa_pattern4.jsonl",
+      "dataset": "finqa",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "approved": 150,
+      "needs_revision": 0,
+      "raw_claims_total": 962,
+      "span_claims_total": 22,
+      "u_f_valid_count": 14,
+      "u_f_valid_pct": 9.33,
+      "u_f_none_count": 136,
+      "u_f_none_pct": 90.67,
+      "u_f_none_reasons": {
+        "needs_revision": 0,
+        "zero_claims": 130,
+        "empty_span": 0,
+        "judge_parse_error": 6
+      },
+      "seed": 3456
+    }
+  ],
+  "overall_records": 1800,
+  "overall_raw_claims": 21471,
+  "overall_span_claims": 8754,
+  "overall_u_f_valid": 951,
+  "overall_u_f_none": 849,
+  "overall_u_f_none_pct": 47.17,
+  "cell_uf_stats": {
+    "popqa_seed1234": {
+      "dataset": "popqa",
+      "seed": 1234,
+      "folder": "report_run_a100",
+      "file": "popqa_pattern4.jsonl",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "u_f_valid_count": 135,
+      "u_f_valid_pct": 90.0,
+      "u_f_none_count": 15,
+      "u_f_none_pct": 10.0,
+      "u_f_none_reasons": {
+        "needs_revision": 10,
+        "zero_claims": 5,
+        "empty_span": 0,
+        "judge_parse_error": 0
+      }
+    },
+    "ifeval_seed1234": {
+      "dataset": "ifeval",
+      "seed": 1234,
+      "folder": "report_run_a100",
+      "file": "ifeval_pattern4.jsonl",
+      "reference_conditioned": false,
+      "total": 150,
+      "processed": 150,
+      "u_f_valid_count": 132,
+      "u_f_valid_pct": 88.0,
+      "u_f_none_count": 18,
+      "u_f_none_pct": 12.0,
+      "u_f_none_reasons": {
+        "needs_revision": 2,
+        "zero_claims": 8,
+        "empty_span": 0,
+        "judge_parse_error": 8
+      }
+    },
+    "livebench_seed1234": {
+      "dataset": "livebench",
+      "seed": 1234,
+      "folder": "report_run_a100",
+      "file": "livebench_pattern4.jsonl",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "u_f_valid_count": 37,
+      "u_f_valid_pct": 24.67,
+      "u_f_none_count": 113,
+      "u_f_none_pct": 75.33,
+      "u_f_none_reasons": {
+        "needs_revision": 6,
+        "zero_claims": 105,
+        "empty_span": 0,
+        "judge_parse_error": 2
+      }
+    },
+    "finqa_seed1234": {
+      "dataset": "finqa",
+      "seed": 1234,
+      "folder": "report_run_a100",
+      "file": "finqa_pattern4.jsonl",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "u_f_valid_count": 11,
+      "u_f_valid_pct": 7.33,
+      "u_f_none_count": 139,
+      "u_f_none_pct": 92.67,
+      "u_f_none_reasons": {
+        "needs_revision": 1,
+        "zero_claims": 132,
+        "empty_span": 0,
+        "judge_parse_error": 6
+      }
+    },
+    "popqa_seed2345": {
+      "dataset": "popqa",
+      "seed": 2345,
+      "folder": "report_run_a100_seed2345",
+      "file": "popqa_pattern4.jsonl",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "u_f_valid_count": 136,
+      "u_f_valid_pct": 90.67,
+      "u_f_none_count": 14,
+      "u_f_none_pct": 9.33,
+      "u_f_none_reasons": {
+        "needs_revision": 11,
+        "zero_claims": 3,
+        "empty_span": 0,
+        "judge_parse_error": 0
+      }
+    },
+    "ifeval_seed2345": {
+      "dataset": "ifeval",
+      "seed": 2345,
+      "folder": "report_run_a100_seed2345",
+      "file": "ifeval_pattern4.jsonl",
+      "reference_conditioned": false,
+      "total": 150,
+      "processed": 150,
+      "u_f_valid_count": 131,
+      "u_f_valid_pct": 87.33,
+      "u_f_none_count": 19,
+      "u_f_none_pct": 12.67,
+      "u_f_none_reasons": {
+        "needs_revision": 1,
+        "zero_claims": 8,
+        "empty_span": 1,
+        "judge_parse_error": 9
+      }
+    },
+    "livebench_seed2345": {
+      "dataset": "livebench",
+      "seed": 2345,
+      "folder": "report_run_a100_seed2345",
+      "file": "livebench_pattern4.jsonl",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "u_f_valid_count": 39,
+      "u_f_valid_pct": 26.0,
+      "u_f_none_count": 111,
+      "u_f_none_pct": 74.0,
+      "u_f_none_reasons": {
+        "needs_revision": 3,
+        "zero_claims": 106,
+        "empty_span": 0,
+        "judge_parse_error": 2
+      }
+    },
+    "finqa_seed2345": {
+      "dataset": "finqa",
+      "seed": 2345,
+      "folder": "report_run_a100_seed2345",
+      "file": "finqa_pattern4.jsonl",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "u_f_valid_count": 15,
+      "u_f_valid_pct": 10.0,
+      "u_f_none_count": 135,
+      "u_f_none_pct": 90.0,
+      "u_f_none_reasons": {
+        "needs_revision": 1,
+        "zero_claims": 127,
+        "empty_span": 0,
+        "judge_parse_error": 7
+      }
+    },
+    "popqa_seed3456": {
+      "dataset": "popqa",
+      "seed": 3456,
+      "folder": "report_run_a100_seed3456",
+      "file": "popqa_pattern4.jsonl",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "u_f_valid_count": 138,
+      "u_f_valid_pct": 92.0,
+      "u_f_none_count": 12,
+      "u_f_none_pct": 8.0,
+      "u_f_none_reasons": {
+        "needs_revision": 7,
+        "zero_claims": 5,
+        "empty_span": 0,
+        "judge_parse_error": 0
+      }
+    },
+    "ifeval_seed3456": {
+      "dataset": "ifeval",
+      "seed": 3456,
+      "folder": "report_run_a100_seed3456",
+      "file": "ifeval_pattern4.jsonl",
+      "reference_conditioned": false,
+      "total": 150,
+      "processed": 150,
+      "u_f_valid_count": 123,
+      "u_f_valid_pct": 82.0,
+      "u_f_none_count": 27,
+      "u_f_none_pct": 18.0,
+      "u_f_none_reasons": {
+        "needs_revision": 3,
+        "zero_claims": 10,
+        "empty_span": 1,
+        "judge_parse_error": 13
+      }
+    },
+    "livebench_seed3456": {
+      "dataset": "livebench",
+      "seed": 3456,
+      "folder": "report_run_a100_seed3456",
+      "file": "livebench_pattern4.jsonl",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "u_f_valid_count": 40,
+      "u_f_valid_pct": 26.67,
+      "u_f_none_count": 110,
+      "u_f_none_pct": 73.33,
+      "u_f_none_reasons": {
+        "needs_revision": 5,
+        "zero_claims": 104,
+        "empty_span": 0,
+        "judge_parse_error": 1
+      }
+    },
+    "finqa_seed3456": {
+      "dataset": "finqa",
+      "seed": 3456,
+      "folder": "report_run_a100_seed3456",
+      "file": "finqa_pattern4.jsonl",
+      "reference_conditioned": true,
+      "total": 150,
+      "processed": 150,
+      "u_f_valid_count": 14,
+      "u_f_valid_pct": 9.33,
+      "u_f_none_count": 136,
+      "u_f_none_pct": 90.67,
+      "u_f_none_reasons": {
+        "needs_revision": 0,
+        "zero_claims": 130,
+        "empty_span": 0,
+        "judge_parse_error": 6
+      }
+    }
+  },
+  "overall_u_f_valid_pct": 52.83,
+  "manifest": {
+    "commit": "6ab676a304f64ac70d1c7993c61c43d1ab8d7c63",
+    "tag": "v10-39-g6ab676a",
+    "execution_timestamp": "2026-10-18T21:06:52Z",
+    "judge_model": "google/gemma-4-12b-it",
+    "judge_role": "judge",
+    "server_params": {
+      "model": "google/gemma-4-12b-it",
+      "max-model-len": 8192,
+      "gpu-memory-utilization": 0.9,
+      "dtype": "bfloat16"
+    },
+    "dataset_reference_status": {
+      "popqa": {
+        "reference_conditioned": true,
+        "references_loaded": 14267
+      },
+      "ifeval": {
+        "reference_conditioned": false,
+        "references_loaded": 0
+      },
+      "livebench": {
+        "reference_conditioned": true,
+        "references_loaded": 200
+      },
+      "finqa": {
+        "reference_conditioned": true,
+        "references_loaded": 1147
+      }
+    },
+    "judge_prompt_templates": {
+      "reference_conditioned": "Reference: {reference}\n\nClaims:\n0: {claim_text}\n\nScore each claim against the reference:\n  -1 = contradicted\n   0 = not enough information\n  +0.5 = partially supported\n  +1 = fully supported\n\nYou MUST return a valid JSON object mapping the claim index (as string) to its numeric score.\nExample: {\"0\": 1, \"1\": -1, \"2\": 0.5}\n\nJSON:",
+      "reference_free": "Claims:\n0: {claim_text}\n\nAssess each claim's factual accuracy using your own knowledge:\n  -1 = contradicted\n   0 = not enough information\n  +0.5 = partially supported\n  +1 = fully supported\n\nYou MUST return a valid JSON object mapping the claim index (as string) to its numeric score.\nExample: {\"0\": 1, \"1\": -1, \"2\": 0.5}\n\nJSON:"
+    },
+    "judge_prompt": "Reference: {reference}\n\nClaims:\n0: {claim_text}\n\nScore each claim against the reference:\n  -1 = contradicted\n   0 = not enough information\n  +0.5 = partially supported\n  +1 = fully supported\n\nYou MUST return a valid JSON object mapping the claim index (as string) to its numeric score.\nExample: {\"0\": 1, \"1\": -1, \"2\": 0.5}\n\nJSON:",
+    "datasets": [
+      "popqa",
+      "ifeval",
+      "livebench",
+      "finqa"
+    ],
+    "seeds": [
+      1234,
+      2345,
+      3456
+    ],
+    "overall_records": 1800,
+    "overall_u_f_valid": 951,
+    "overall_u_f_none": 849,
+    "overall_u_f_none_pct": 47.17,
+    "cell_uf_stats": {
+      "popqa_seed1234": {
+        "dataset": "popqa",
+        "seed": 1234,
+        "folder": "report_run_a100",
+        "file": "popqa_pattern4.jsonl",
+        "reference_conditioned": true,
+        "total": 150,
+        "processed": 150,
+        "u_f_valid_count": 135,
+        "u_f_valid_pct": 90.0,
+        "u_f_none_count": 15,
+        "u_f_none_pct": 10.0,
+        "u_f_none_reasons": {
+          "needs_revision": 10,
+          "zero_claims": 5,
+          "empty_span": 0,
+          "judge_parse_error": 0
+        }
+      },
+      "ifeval_seed1234": {
+        "dataset": "ifeval",
+        "seed": 1234,
+        "folder": "report_run_a100",
+        "file": "ifeval_pattern4.jsonl",
+        "reference_conditioned": false,
+        "total": 150,
+        "processed": 150,
+        "u_f_valid_count": 132,
+        "u_f_valid_pct": 88.0,
+        "u_f_none_count": 18,
+        "u_f_none_pct": 12.0,
+        "u_f_none_reasons": {
+          "needs_revision": 2,
+          "zero_claims": 8,
+          "empty_span": 0,
+          "judge_parse_error": 8
+        }
+      },
+      "livebench_seed1234": {
+        "dataset": "livebench",
+        "seed": 1234,
+        "folder": "report_run_a100",
+        "file": "livebench_pattern4.jsonl",
+        "reference_conditioned": true,
+        "total": 150,
+        "processed": 150,
+        "u_f_valid_count": 37,
+        "u_f_valid_pct": 24.67,
+        "u_f_none_count": 113,
+        "u_f_none_pct": 75.33,
+        "u_f_none_reasons": {
+          "needs_revision": 6,
+          "zero_claims": 105,
+          "empty_span": 0,
+          "judge_parse_error": 2
+        }
+      },
+      "finqa_seed1234": {
+        "dataset": "finqa",
+        "seed": 1234,
+        "folder": "report_run_a100",
+        "file": "finqa_pattern4.jsonl",
+        "reference_conditioned": true,
+        "total": 150,
+        "processed": 150,
+        "u_f_valid_count": 11,
+        "u_f_valid_pct": 7.33,
+        "u_f_none_count": 139,
+        "u_f_none_pct": 92.67,
+        "u_f_none_reasons": {
+          "needs_revision": 1,
+          "zero_claims": 132,
+          "empty_span": 0,
+          "judge_parse_error": 6
+        }
+      },
+      "popqa_seed2345": {
+        "dataset": "popqa",
+        "seed": 2345,
+        "folder": "report_run_a100_seed2345",
+        "file": "popqa_pattern4.jsonl",
+        "reference_conditioned": true,
+        "total": 150,
+        "processed": 150,
+        "u_f_valid_count": 136,
+        "u_f_valid_pct": 90.67,
+        "u_f_none_count": 14,
+        "u_f_none_pct": 9.33,
+        "u_f_none_reasons": {
+          "needs_revision": 11,
+          "zero_claims": 3,
+          "empty_span": 0,
+          "judge_parse_error": 0
+        }
+      },
+      "ifeval_seed2345": {
+        "dataset": "ifeval",
+        "seed": 2345,
+        "folder": "report_run_a100_seed2345",
+        "file": "ifeval_pattern4.jsonl",
+        "reference_conditioned": false,
+        "total": 150,
+        "processed": 150,
+        "u_f_valid_count": 131,
+        "u_f_valid_pct": 87.33,
+        "u_f_none_count": 19,
+        "u_f_none_pct": 12.67,
+        "u_f_none_reasons": {
+          "needs_revision": 1,
+          "zero_claims": 8,
+          "empty_span": 1,
+          "judge_parse_error": 9
+        }
+      },
+      "livebench_seed2345": {
+        "dataset": "livebench",
+        "seed": 2345,
+        "folder": "report_run_a100_seed2345",
+        "file": "livebench_pattern4.jsonl",
+        "reference_conditioned": true,
+        "total": 150,
+        "processed": 150,
+        "u_f_valid_count": 39,
+        "u_f_valid_pct": 26.0,
+        "u_f_none_count": 111,
+        "u_f_none_pct": 74.0,
+        "u_f_none_reasons": {
+          "needs_revision": 3,
+          "zero_claims": 106,
+          "empty_span": 0,
+          "judge_parse_error": 2
+        }
+      },
+      "finqa_seed2345": {
+        "dataset": "finqa",
+        "seed": 2345,
+        "folder": "report_run_a100_seed2345",
+        "file": "finqa_pattern4.jsonl",
+        "reference_conditioned": true,
+        "total": 150,
+        "processed": 150,
+        "u_f_valid_count": 15,
+        "u_f_valid_pct": 10.0,
+        "u_f_none_count": 135,
+        "u_f_none_pct": 90.0,
+        "u_f_none_reasons": {
+          "needs_revision": 1,
+          "zero_claims": 127,
+          "empty_span": 0,
+          "judge_parse_error": 7
+        }
+      },
+      "popqa_seed3456": {
+        "dataset": "popqa",
+        "seed": 3456,
+        "folder": "report_run_a100_seed3456",
+        "file": "popqa_pattern4.jsonl",
+        "reference_conditioned": true,
+        "total": 150,
+        "processed": 150,
+        "u_f_valid_count": 138,
+        "u_f_valid_pct": 92.0,
+        "u_f_none_count": 12,
+        "u_f_none_pct": 8.0,
+        "u_f_none_reasons": {
+          "needs_revision": 7,
+          "zero_claims": 5,
+          "empty_span": 0,
+          "judge_parse_error": 0
+        }
+      },
+      "ifeval_seed3456": {
+        "dataset": "ifeval",
+        "seed": 3456,
+        "folder": "report_run_a100_seed3456",
+        "file": "ifeval_pattern4.jsonl",
+        "reference_conditioned": false,
+        "total": 150,
+        "processed": 150,
+        "u_f_valid_count": 123,
+        "u_f_valid_pct": 82.0,
+        "u_f_none_count": 27,
+        "u_f_none_pct": 18.0,
+        "u_f_none_reasons": {
+          "needs_revision": 3,
+          "zero_claims": 10,
+          "empty_span": 1,
+          "judge_parse_error": 13
+        }
+      },
+      "livebench_seed3456": {
+        "dataset": "livebench",
+        "seed": 3456,
+        "folder": "report_run_a100_seed3456",
+        "file": "livebench_pattern4.jsonl",
+        "reference_conditioned": true,
+        "total": 150,
+        "processed": 150,
+        "u_f_valid_count": 40,
+        "u_f_valid_pct": 26.67,
+        "u_f_none_count": 110,
+        "u_f_none_pct": 73.33,
+        "u_f_none_reasons": {
+          "needs_revision": 5,
+          "zero_claims": 104,
+          "empty_span": 0,
+          "judge_parse_error": 1
+        }
+      },
+      "finqa_seed3456": {
+        "dataset": "finqa",
+        "seed": 3456,
+        "folder": "report_run_a100_seed3456",
+        "file": "finqa_pattern4.jsonl",
+        "reference_conditioned": true,
+        "total": 150,
+        "processed": 150,
+        "u_f_valid_count": 14,
+        "u_f_valid_pct": 9.33,
+        "u_f_none_count": 136,
+        "u_f_none_pct": 90.67,
+        "u_f_none_reasons": {
+          "needs_revision": 0,
+          "zero_claims": 130,
+          "empty_span": 0,
+          "judge_parse_error": 6
+        }
+      }
+    }
+  }
+}
