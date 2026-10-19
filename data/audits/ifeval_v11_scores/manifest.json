@@ -1,0 +1,44 @@
+{
+  "dataset": "ifeval",
+  "total_records": 900,
+  "total_files": 6,
+  "schema_pattern": "enriched_baseline_record",
+  "cells": {
+    "ifeval_p1_s1234": {
+      "total": 150,
+      "correct": 3,
+      "accuracy": 0.02,
+      "accuracy_pct": 2.0
+    },
+    "ifeval_p2_s1234": {
+      "total": 150,
+      "correct": 2,
+      "accuracy": 0.013333333333333334,
+      "accuracy_pct": 1.3333333333333335
+    },
+    "ifeval_p3_s1234": {
+      "total": 150,
+      "correct": 3,
+      "accuracy": 0.02,
+      "accuracy_pct": 2.0
+    },
+    "ifeval_p4_s1234": {
+      "total": 150,
+      "correct": 3,
+      "accuracy": 0.02,
+      "accuracy_pct": 2.0
+    },
+    "ifeval_p4_s2345": {
+      "total": 150,
+      "correct": 3,
+      "accuracy": 0.02,
+      "accuracy_pct": 2.0
+    },
+    "ifeval_p4_s3456": {
+      "total": 150,
+      "correct": 2,
+      "accuracy": 0.013333333333333334,
+      "accuracy_pct": 1.3333333333333335
+    }
+  }
+}
