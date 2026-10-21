@@ -20,12 +20,24 @@ class PopqaScorer(Scorer):
         extracted = _extract_answer(raw_prediction)
         raw_scores = _compute_scores(aliases, raw_prediction)
         extracted_scores = _compute_scores(aliases, extracted)
+        
+        # Naive substring containment (Mallen et al. baseline)
+        valid_aliases = [a.lower() for a in aliases if a and a.strip()]
+        naive_match = 1.0 if any(a in raw_prediction.lower() for a in valid_aliases) else 0.0
+
+        # Primary metric: Word-boundary containment on full final_answer (Doc 09)
+        wb_match = raw_scores["match"]
+        em_match = extracted_scores["match"]
+
         return {
-            "match": extracted_scores["match"],
+            "match": wb_match,
+            "match_word_boundary": wb_match,
+            "match_naive_substring": naive_match,
+            "match_extracted": em_match,
             "match_jaccard_word": extracted_scores["match_jaccard_word"],
             "match_jaccard_bigram": extracted_scores["match_jaccard_bigram"],
             "match_acronym": extracted_scores["match_acronym"],
-            "score_popqa_raw": raw_scores["match"],
+            "score_popqa_raw": wb_match,
         }
 
 

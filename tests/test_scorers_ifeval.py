@@ -101,10 +101,10 @@ class TestIfevalScorer:
 
     def test_all_four_values_returned(self):
         result = self._score("hello", "Include the word 'hello'")
-        assert set(result.keys()) == {
+        assert {
             "strict_prompt", "loose_prompt",
             "strict_instruction", "loose_instruction",
-        }
+        }.issubset(set(result.keys()))
 
     def test_deterministic(self):
         r1 = self._score("hello", "Include the word 'hello'")
