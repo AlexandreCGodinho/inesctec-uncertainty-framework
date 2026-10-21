@@ -17,7 +17,7 @@
 
 | Benchmark | Primary Metric (Official) | Secondary / Reference Metric | Pattern 1 (Governed) | Pattern 2 (Pipeline) | Pattern 3 (Reflexive) | Pattern 4 (Deliberation, Cross-Seed Mean ± Std) |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: |
-| **PopQA** | Word-Boundary (Doc 09) | Naive Substring / Exact Match | 20.00% (30/150) | 24.67% (37/150) | 23.33% (35/150) | **22.22% ± 0.38%** (s1234: 22.67%, s2345: 22.00%, s3456: 22.00%) |
+| **PopQA** | Word-Boundary (Doc 09) | Naive Substring / Exact Match | 20.00% (30/150) | 24.67% (37/150) | 23.33% (35/150) | **22.00% ± 0.67%** (s1234: 22.67%, s2345: 21.33%, s3456: 22.00%) |
 | **IFEval** | Strict Prompt (Span on P4) | Loose Prompt (Google) | 88.67% (133/150) | 86.67% (130/150) | 90.00% (135/150) | **79.56% ± 1.68%** (s1234: 79.33%, s2345: 81.33%, s3456: 78.00%) |
 | **LiveBench** | Reasoning Acc (Official) | Continuous Score | 69.33% (104/150) | 73.33% (110/150) | 80.58% (120/150) | **78.28% ± 2.33%** (s1234: 79.67%, s2345: 79.58%, s3456: 75.58%) |
 | **FinQA** | Execution Acc (0.5% tol) | Target Match (Task 5B) | 58.00% (87/150) | 62.00% (93/150) | 62.67% (94/150) | **75.78% ± 0.38%** (s1234: 76.00%, s2345: 76.00%, s3456: 75.33%) |
@@ -35,10 +35,10 @@
 | **P1 (seed 1234)** | 20.00% (30/150) | 22.67% (34/150) | 11.33% (17/150) |
 | **P2 (seed 1234)** | 24.67% (37/150) | 27.33% (41/150) | 16.67% (25/150) |
 | **P3 (seed 1234)** | 23.33% (35/150) | 26.67% (40/150) | 14.67% (22/150) |
-| **P4 (seed 1234)** | 22.67% (34/150) | 27.33% (41/150) | 18.67% (28/150) |
-| **P4 (seed 2345)** | 22.00% (33/150) | 28.67% (43/150) | 19.33% (29/150) |
-| **P4 (seed 3456)** | 22.00% (33/150) | 24.67% (37/150) | 18.00% (27/150) |
-| **P4 Mean ± Std** | **22.22% ± 0.38%** | **26.89% ± 2.03%** | **18.67% ± 0.67%** |
+| **P4 (seed 1234)** | 22.67% (34/150) | 27.33% (41/150) | 20.67% (31/150) |
+| **P4 (seed 2345)** | 21.33% (32/150) | 27.33% (41/150) | 20.00% (30/150) |
+| **P4 (seed 3456)** | 22.00% (33/150) | 24.67% (37/150) | 20.67% (31/150) |
+| **P4 Mean ± Std** | **22.00% ± 0.67%** | **26.44% ± 1.54%** | **20.44% ± 0.38%** |
 
 ### IFEval: Official Google Research Harness (Primary vs. Appendix Sensitivity)
 | Pattern / Seed | Strict Prompt (Primary: Span on P4) | Strict Prompt (Sensitivity: Full Response) | Loose Prompt (Primary) | Loose Prompt (Sensitivity: Full Response) |
@@ -54,6 +54,7 @@
 > **Measurement Lessons (Harness Stochasticity & Scaffolding Impact):**
 > 1. **Langdetect Non-Determinism:** The official Google Research evaluation harness relies on `langdetect` for casing instructions (`change_case:english_capital`, `change_case:english_lowercase`) without setting an internal random seed. Unseeded calls can flip verdicts on identical text across executions. Fixing `DetectorFactory.seed = 0` guarantees 100% deterministic, row-by-row reproducible scores.
 > 2. **Multi-Agent Deliberation Scaffolding:** In Pattern 4, conversational preambles and critique exchanges fail byte-level format checks under Strict Prompt on full text (63.78%), but when evaluated after the verdict line (`extracted_answer_span`), performance jumps to 79.56%, aligning with the Loose Prompt score (84.00%) and proving that substantive instructions were faithfully executed.
+> 3. **PopQA Abstention Enforcement:** In Pattern 4, records concluding with `VERDICT: needs_revision` represent operational abstentions (Doc 08 Case A). Enforcing zero-match on rejected deliberations eliminated a false-positive leakage in seed 2345 (query 1288509), standardizing Pattern 4 accuracy at 22.00% ± 0.67%.
 
 ---
 

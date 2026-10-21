@@ -18,10 +18,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.scoring.popqa_scorer import PopqaScorer, _extract_answer
+from src.scoring.popqa_scorer import PopqaScorer
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
+
+POPQA_MAPPING_FILE = PROJECT_ROOT / "data" / "popqa_mapping_150_prompts.jsonl"
+HF_POPQA_REVISION = "098765c79ea10a2cb19c828324e33281b8336ec0"
 
 RUNS = [
     # Seed 1234 (all 4 patterns)
@@ -36,11 +39,20 @@ RUNS = [
 ]
 
 
-def load_popqa_references() -> Dict[str, Any]:
-    from datasets import load_dataset
+def load_popqa_references(mapping_path: Path = POPQA_MAPPING_FILE) -> Dict[str, Any]:
+    if mapping_path.exists():
+        logger.info("Loading PopQA canonical references from local mapping: %s", mapping_path)
+        refs = {}
+        with open(mapping_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    item = json.loads(line)
+                    refs[str(item["query_id"])] = item
+        return refs
 
-    logger.info("Loading PopQA canonical references from Hugging Face...")
-    popqa_ds = load_dataset("akariasai/PopQA", split="test")
+    logger.info("Local mapping not found. Fetching PopQA from Hugging Face (revision: %s)...", HF_POPQA_REVISION)
+    from datasets import load_dataset
+    popqa_ds = load_dataset("akariasai/PopQA", split="test", revision=HF_POPQA_REVISION)
     return {str(item["id"]): item for item in popqa_ds}
 
 
@@ -80,15 +92,16 @@ def score_popqa_all(
                 qid = str(record["query_id"])
                 p_ref = references.get(qid, {})
 
-                final_ans = record.get("final_answer", "")
-                extracted = _extract_answer(final_ans)
-                ref_ans = p_ref.get("answer", p_ref.get("reference", ""))
+                ref_ans = p_ref.get("obj", p_ref.get("answer", p_ref.get("reference", "")))
                 possible = p_ref.get("possible_answers", None)
                 if possible is not None:
-                    try:
-                        aliases = ast.literal_eval(possible)
-                    except (ValueError, SyntaxError):
-                        aliases = [ref_ans]
+                    if isinstance(possible, list):
+                        aliases = possible
+                    else:
+                        try:
+                            aliases = ast.literal_eval(possible)
+                        except (ValueError, SyntaxError):
+                            aliases = [ref_ans]
                 else:
                     aliases = [ref_ans]
 
@@ -98,7 +111,9 @@ def score_popqa_all(
                 naive_match = float(res.get("match_naive_substring", 0.0))
                 em_match = float(res.get("match_extracted", 0.0))
                 raw_match = float(res.get("score_popqa_raw", 0.0))
-                abstain = bool(not extracted or not extracted.strip())
+                abstain = bool(res.get("abstain", False))
+                extracted = res.get("extracted_answer", "")
+                span_cat = res.get("span_category", "")
 
                 # Enriched record: preserves 100% of baseline telemetry and appends audit fields
                 enriched_record = dict(record)
@@ -114,6 +129,7 @@ def score_popqa_all(
                 enriched_record["popqa_prop"] = p_ref.get("prop", "")
                 enriched_record["popqa_subj"] = p_ref.get("subj", "")
                 enriched_record["popqa_abstain"] = abstain
+                enriched_record["popqa_span_category"] = span_cat
                 enriched_record["popqa_scored_v11"] = True
 
                 out_f.write(json.dumps(enriched_record, ensure_ascii=False) + "\n")
@@ -135,7 +151,7 @@ def score_popqa_all(
         writer = csv.writer(cf)
         writer.writerow([
             "query_id", "pattern", "seed", "match", "popqa_word_boundary", "popqa_naive_substring", "popqa_exact_match",
-            "popqa_abstain", "popqa_extracted_answer", "popqa_gold_answer", "popqa_aliases",
+            "popqa_abstain", "popqa_span_category", "popqa_extracted_answer", "popqa_gold_answer", "popqa_aliases",
             "popqa_question", "popqa_score_raw", "tokens_prompt", "tokens_completion",
             "latency_ms", "final_answer_preview"
         ])
@@ -149,6 +165,7 @@ def score_popqa_all(
                 r.get("popqa_naive_substring", 0.0),
                 r.get("popqa_exact_match", 0.0),
                 r["popqa_abstain"],
+                r.get("popqa_span_category", ""),
                 r["popqa_extracted_answer"].replace("\n", " ")[:150],
                 r["popqa_gold_answer"],
                 " | ".join(r["popqa_aliases"]) if isinstance(r["popqa_aliases"], list) else str(r["popqa_aliases"]),
@@ -165,8 +182,18 @@ def score_popqa_all(
         "total_records": len(all_rows),
         "total_files": len(RUNS),
         "schema_pattern": "enriched_baseline_record",
+        "provenance": {
+            "source": "akariasai/PopQA",
+            "hf_revision": HF_POPQA_REVISION,
+            "local_mapping": str(POPQA_MAPPING_FILE.relative_to(PROJECT_ROOT)),
+        },
         "cells": summary_by_cell,
     }
+    with open(out_dir / "manifest.json", "w", encoding="utf-8") as mf:
+        json.dump(manifest, mf, indent=2)
+
+    logger.info("PopQA audit completed: %d enriched records written to %s", len(all_rows), out_dir)
+    return manifest
     with open(out_dir / "manifest.json", "w", encoding="utf-8") as mf:
         json.dump(manifest, mf, indent=2)
 

@@ -53,8 +53,44 @@ def test_popqa_empty_answer_abstain():
     reference = {"answer": "Some Entity"}
     result = scorer.score(record, reference)
     assert result["match"] == 0.0
-    extracted = _extract_answer(record["final_answer"])
-    assert bool(not extracted or not extracted.strip()) is True
+    assert result["abstain"] is True
+    assert result["extracted_answer"] == ""
+
+
+def test_popqa_needs_revision_abstention_case_a():
+    """Verify Doc 08 Case A: needs_revision is an operational abstention (match=0.0)."""
+    scorer = PopqaScorer()
+    # Deliberation discussion mentions the correct answer, but rejects it with needs_revision
+    record = {
+        "final_answer": (
+            "The deliberation discussed whether Adolphe Adam was the composer.\n"
+            "Analysis 1 says Adolphe Adam, but there are multiple flaws.\n"
+            "VERDICT: needs_revision"
+        )
+    }
+    reference = {
+        "answer": "Adolphe Adam",
+        "possible_answers": "['Adolphe Adam']",
+    }
+    result = scorer.score(record, reference)
+    assert result["match"] == 0.0
+    assert result["match_word_boundary"] == 0.0
+    assert result["match_naive_substring"] == 0.0
+    assert result["match_extracted"] == 0.0
+    assert result["abstain"] is True
+    assert result["extracted_answer"] == ""
+    assert result["span_category"] == "needs_revision"
+
+
+def test_popqa_local_mapping_integrity():
+    """Verify local 150-prompt hermetic mapping integrity."""
+    from scripts.score_popqa_v11 import POPQA_MAPPING_FILE, load_popqa_references
+    assert POPQA_MAPPING_FILE.exists()
+    refs = load_popqa_references(POPQA_MAPPING_FILE)
+    assert len(refs) == 150
+    # Check sample item
+    assert "5247809" in refs
+    assert refs["5247809"]["obj"] == "Jimmy Van Heusen"
 
 
 def test_popqa_record_enrichment_parity():

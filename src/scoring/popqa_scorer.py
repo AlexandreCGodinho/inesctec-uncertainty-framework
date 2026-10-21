@@ -1,23 +1,53 @@
 import re
 import string
 
+from src.scoring.answer_span import extract_answer_span
 from src.scoring.base import Scorer
 
 
 class PopqaScorer(Scorer):
     def score(self, record: dict, reference: dict) -> dict:
         raw_prediction = record.get("final_answer", "")
-        ref = reference.get("answer", reference.get("reference", ""))
+        ref = reference.get("answer", reference.get("obj", reference.get("reference", "")))
         possible = reference.get("possible_answers", None)
         if possible is not None:
-            import ast
-            try:
-                aliases = ast.literal_eval(possible)
-            except (ValueError, SyntaxError):
-                aliases = [ref]
+            if isinstance(possible, list):
+                aliases = [str(a) for a in possible if a]
+            else:
+                import ast
+                try:
+                    parsed = ast.literal_eval(possible)
+                    aliases = [str(a) for a in parsed if a] if isinstance(parsed, list) else [str(parsed)]
+                except (ValueError, SyntaxError):
+                    aliases = [ref]
         else:
             aliases = [ref]
-        extracted = _extract_answer(raw_prediction)
+
+        # Extract answer span per Doc 08 protocol
+        span, category = extract_answer_span(raw_prediction)
+
+        # Operational Abstention: Doc 08 Case A (needs_revision)
+        if category == "needs_revision":
+            return {
+                "match": 0.0,
+                "match_word_boundary": 0.0,
+                "match_naive_substring": 0.0,
+                "match_extracted": 0.0,
+                "match_jaccard_word": 0.0,
+                "match_jaccard_bigram": 0.0,
+                "match_acronym": 0.0,
+                "score_popqa_raw": 0.0,
+                "extracted_answer": "",
+                "abstain": True,
+                "span_category": "needs_revision",
+            }
+
+        # For approved deliberation (Pattern 4) or unmoderated passthrough (Patterns 1-3)
+        if category in ("approved", "empty_approved", "approved_fallback"):
+            extracted = span
+        else:
+            extracted = _extract_answer(raw_prediction)
+
         raw_scores = _compute_scores(aliases, raw_prediction)
         extracted_scores = _compute_scores(aliases, extracted)
         
@@ -38,6 +68,9 @@ class PopqaScorer(Scorer):
             "match_jaccard_bigram": extracted_scores["match_jaccard_bigram"],
             "match_acronym": extracted_scores["match_acronym"],
             "score_popqa_raw": wb_match,
+            "extracted_answer": extracted,
+            "abstain": bool(not extracted or not extracted.strip()),
+            "span_category": category,
         }
 
 

@@ -3,6 +3,11 @@
   "total_records": 900,
   "total_files": 6,
   "schema_pattern": "enriched_baseline_record",
+  "provenance": {
+    "source": "akariasai/PopQA",
+    "hf_revision": "098765c79ea10a2cb19c828324e33281b8336ec0",
+    "local_mapping": "data/popqa_mapping_150_prompts.jsonl"
+  },
   "cells": {
     "popqa_p1_s1234": {
       "total": 150,
@@ -30,9 +35,9 @@
     },
     "popqa_p4_s2345": {
       "total": 150,
-      "correct": 33,
-      "accuracy": 0.22,
-      "accuracy_pct": 22.0
+      "correct": 32,
+      "accuracy": 0.21333333333333335,
+      "accuracy_pct": 21.333333333333336
     },
     "popqa_p4_s3456": {
       "total": 150,
