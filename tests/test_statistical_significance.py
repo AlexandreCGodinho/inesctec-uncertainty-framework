@@ -7,9 +7,12 @@ import pytest
 from scripts.analysis_statistics import (
     _mcnemar_pvalue,
     _paired_bootstrap_ci,
+    _paired_wilcoxon_test,
     _compute_p4_seed_stats,
     run_mcnemar_analysis,
     run_bootstrap_analysis,
+    run_livebench_wilcoxon_analysis,
+    run_livebench_mcnemar_secondary,
     run_fdr,
     _collect_pvals,
 )
@@ -205,3 +208,47 @@ class TestRunFdr:
         r2 = run_fdr(pvals)
         assert r1["corrected"] == r2["corrected"]
         assert r1["rejected"] == r2["rejected"]
+
+
+class TestLiveBenchWilcoxonAndSecondaryMcNemar:
+    def test_paired_wilcoxon_zero_and_nonzero(self):
+        res_zero = _paired_wilcoxon_test(np.array([1.0, 0.375]), np.array([1.0, 0.375]))
+        assert res_zero["p_value"] == 1.0
+        assert res_zero["n_nonzero"] == 0
+
+        res_pos = _paired_wilcoxon_test(
+            np.array([1.0, 1.0, 0.375, 1.0, 1.0, 1.0]),
+            np.array([0.0, 0.25, 0.0, 0.0, 0.125, 0.0]),
+        )
+        assert res_pos["observed_mean_diff"] > 0
+        assert res_pos["n_nonzero"] == 6
+        assert 0.0 < res_pos["p_value"] < 0.05
+
+    def test_livebench_wilcoxon_primary_all_pairs(self):
+        df = pd.DataFrame({
+            "dataset": ["livebench"] * 8,
+            "query_id": ["q1", "q2", "q1", "q2", "q1", "q2", "q1", "q2"],
+            "pattern": ["1", "1", "2", "2", "3", "3", "4", "4"],
+            "seed": [1234, 1234, 1234, 1234, 1234, 1234, 1234, 1234],
+            "accuracy": [0.0, 0.25, 0.375, 1.0, 1.0, 1.0, 1.0, 1.0],
+        })
+        res = run_livebench_wilcoxon_analysis(df)
+        assert "p2_vs_p1" in res
+        assert "p3_vs_p2" in res
+        assert "p4_vs_p3" in res
+        assert res["p2_vs_p1"]["observed_mean_diff"] == pytest.approx((0.375 + 0.75) / 2)
+
+    def test_livebench_mcnemar_secondary_binarised_at_acc1(self):
+        # q1: P1 has partial credit (0.375 -> 0), P2 has full credit (1.0 -> 1) => discordant b=1
+        # q2: P1 has 1.0 (-> 1), P2 has 1.0 (-> 1) => concordant
+        df = pd.DataFrame({
+            "dataset": ["livebench"] * 4,
+            "query_id": ["q1", "q2", "q1", "q2"],
+            "pattern": ["1", "1", "2", "2"],
+            "seed": [1234, 1234, 1234, 1234],
+            "accuracy": [0.375, 1.0, 1.0, 1.0],
+        })
+        res = run_livebench_mcnemar_secondary(df, pairs=[(2, 1)])
+        assert res["p2_vs_p1"]["b"] == 1
+        assert res["p2_vs_p1"]["c"] == 0
+        assert res["p2_vs_p1"]["n"] == 2

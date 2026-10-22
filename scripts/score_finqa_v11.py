@@ -298,7 +298,7 @@ def _generate_markdown_report(summary: Dict[str, Any], output_path: Path) -> Non
         "",
         "## 2. Detailed Per-File Telemetry Breakdown",
         "",
-        "| Seed Directory | Pattern | Seed | Records | Matches | Abstentions | Accuracy (%) |",
+        "| Seed Directory | Pattern | Seed | Records | Matches | Abstentions (`finqa_abstain`) | Accuracy (%) |",
         "|---|---|---|---|---|---|---|",
     ])
 
@@ -315,6 +315,9 @@ def _generate_markdown_report(summary: Dict[str, Any], output_path: Path) -> Non
         )
 
     lines.extend([
+        "",
+        "> **Note on `finqa_abstain` vs. `needs_revision` in Pattern 4:**",
+        "> The `Abstentions (finqa_abstain)` column reports all records where `unified_extract_numeric_answer` returns `is_abstain = True` (`finqa_abstain = True`). In Pattern 4, the 3 abstentions (1 per seed) do not come from the same `needs_revision` verdict across all three seeds: in seeds `1234` and `2345`, the abstention is `AMT/2006/page_113.pdf-3` (`span_category = needs_revision`, whereas in seed `3456` that query reaches `VERDICT: approved` and scores `-364`); in seed `3456` (`needs_revision = 0`), the abstention is `JPM/2018/page_90.pdf-2` (`span_category = approved`), triggered by the numeric extraction rule when the approved span explicitly states that the value *\"cannot be determined from the provided text\"*.",
         "",
         "## 3. Operational Verification and Experimental Parity",
         "- **Scoring Method:** Deterministic rule-based evaluation (regex extraction + floating-point tolerance `rtol=0.005`, `atol=1e-06`). Zero LLM judge calls were invoked.",

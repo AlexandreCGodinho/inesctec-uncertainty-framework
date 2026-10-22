@@ -35,7 +35,7 @@ class TestIfevalScorer:
             "Include the word 'hello' and write at least 10 characters",
         )
         assert result["strict_prompt"] == 0.0
-        assert result["loose_prompt"] == 1.0
+        assert result["loose_prompt"] == 0.0
         assert result["strict_instruction"] == 0.5
         assert result["loose_instruction"] == 0.5
 

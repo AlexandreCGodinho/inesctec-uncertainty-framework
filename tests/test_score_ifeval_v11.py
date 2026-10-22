@@ -53,6 +53,35 @@ def test_ifeval_empty_response_abstain():
     assert bool(not span or not span.strip()) is True
 
 
+def test_ifeval_p4_empty_span_no_fallback_to_full_response():
+    """Verify Rev 1.1 / D1: empty Pattern 4 spans (including needs_revision) score 0.0 without fallback."""
+    scorer = IfevalScorer()
+    # Full response satisfies no_comma, but ends in VERDICT: needs_revision (empty span)
+    record = {
+        "pattern": 4,
+        "final_answer": (
+            "This deliberation response contains zero commas and discusses ocean life.\n"
+            "VERDICT: needs_revision"
+        ),
+    }
+    reference = {
+        "key": 1843,
+        "prompt": "Write a short sentence without using any commas.",
+        "instruction_id_list": ["punctuation:no_comma"],
+        "kwargs": [{}],
+    }
+    result = scorer.score(record, reference)
+    assert result["span_category"] == "needs_revision"
+    assert result["evaluated_text_type"] == "span_after_verdict"
+    assert result["strict_prompt"] == 0.0
+    assert result["loose_prompt"] == 0.0
+    assert result["strict_instruction"] == 0.0
+    assert result["loose_instruction"] == 0.0
+    # Sensitivity on full response is still computed separately
+    assert result["strict_prompt_full_response"] == 1.0
+    assert result["loose_prompt_full_response"] == 1.0
+
+
 def test_ifeval_record_enrichment_parity():
     # Mock a complete baseline record with GPU telemetry and uncertainty metrics
     baseline_record = {
@@ -81,7 +110,7 @@ def test_ifeval_record_enrichment_parity():
 
     ref = {
         "prompt": "Write a travel guide in JSON format.",
-        "instruction_id_list": ["detectable_format:json"],
+        "instruction_id_list": ["detectable_format:json_format"],
     }
 
     scorer = IfevalScorer()
@@ -110,3 +139,28 @@ def test_ifeval_record_enrichment_parity():
     assert "match" in enriched_record
     assert enriched_record["ifeval_prompt"] == ref["prompt"]
     assert enriched_record["ifeval_scored_v11"] is True
+
+
+def test_load_ifeval_references_canonical_and_fail_fast(tmp_path):
+    """Verify Rev 2.2: load_ifeval_references loads the 150 pinned prompts and raises FileNotFoundError if missing."""
+    from scripts.score_ifeval_v11 import load_ifeval_references
+
+    refs = load_ifeval_references()
+    assert len(refs) == 150
+    assert "0" in refs and "149" in refs
+
+    missing_path = tmp_path / "nonexistent_ifeval_mapping.jsonl"
+    with pytest.raises(FileNotFoundError, match="Canonical IFEval reference mapping not found"):
+        load_ifeval_references(missing_path)
+
+
+def test_ifeval_invalid_instruction_id_raises_key_error():
+    """Verify Rev 3.6: unknown instruction identifiers fail loudly with KeyError instead of silent aliasing."""
+    scorer = IfevalScorer()
+    record = {"final_answer": '{"travel_guide": "Bohemia"}'}
+    ref = {
+        "prompt": "Write a travel guide in JSON format.",
+        "instruction_id_list": ["detectable_format:json"],
+    }
+    with pytest.raises(KeyError, match="detectable_format:json"):
+        scorer.score(record, ref)

@@ -109,7 +109,7 @@ def score_popqa_all(
                 match_val = float(res.get("match", 0.0))
                 wb_match = float(res.get("match_word_boundary", match_val))
                 naive_match = float(res.get("match_naive_substring", 0.0))
-                em_match = float(res.get("match_extracted", 0.0))
+                extracted_match = float(res.get("match_extracted", 0.0))
                 raw_match = float(res.get("score_popqa_raw", 0.0))
                 abstain = bool(res.get("abstain", False))
                 extracted = res.get("extracted_answer", "")
@@ -120,7 +120,7 @@ def score_popqa_all(
                 enriched_record["match"] = match_val
                 enriched_record["popqa_word_boundary"] = wb_match
                 enriched_record["popqa_naive_substring"] = naive_match
-                enriched_record["popqa_exact_match"] = em_match
+                enriched_record["popqa_extracted_match"] = extracted_match
                 enriched_record["popqa_extracted_answer"] = extracted
                 enriched_record["popqa_gold_answer"] = ref_ans
                 enriched_record["popqa_aliases"] = aliases
@@ -150,7 +150,7 @@ def score_popqa_all(
     with open(csv_file, "w", encoding="utf-8", newline="") as cf:
         writer = csv.writer(cf)
         writer.writerow([
-            "query_id", "pattern", "seed", "match", "popqa_word_boundary", "popqa_naive_substring", "popqa_exact_match",
+            "query_id", "pattern", "seed", "match", "popqa_word_boundary", "popqa_naive_substring", "popqa_extracted_match",
             "popqa_abstain", "popqa_span_category", "popqa_extracted_answer", "popqa_gold_answer", "popqa_aliases",
             "popqa_question", "popqa_score_raw", "tokens_prompt", "tokens_completion",
             "latency_ms", "final_answer_preview"
@@ -163,7 +163,7 @@ def score_popqa_all(
                 r["match"],
                 r.get("popqa_word_boundary", r["match"]),
                 r.get("popqa_naive_substring", 0.0),
-                r.get("popqa_exact_match", 0.0),
+                r.get("popqa_extracted_match", 0.0),
                 r["popqa_abstain"],
                 r.get("popqa_span_category", ""),
                 r["popqa_extracted_answer"].replace("\n", " ")[:150],
@@ -189,11 +189,6 @@ def score_popqa_all(
         },
         "cells": summary_by_cell,
     }
-    with open(out_dir / "manifest.json", "w", encoding="utf-8") as mf:
-        json.dump(manifest, mf, indent=2)
-
-    logger.info("PopQA audit completed: %d enriched records written to %s", len(all_rows), out_dir)
-    return manifest
     with open(out_dir / "manifest.json", "w", encoding="utf-8") as mf:
         json.dump(manifest, mf, indent=2)
 

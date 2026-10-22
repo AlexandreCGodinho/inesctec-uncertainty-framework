@@ -7,7 +7,8 @@
     "vendor_package": "src.scoring.vendor.google_ifeval",
     "upstream_commit": "e6890f85757dd84e27ca6df2dd30651dafad28e0",
     "deterministic_seed": 0,
-    "langdetect_version": "1.0.9"
+    "langdetect_version": "1.0.9",
+    "nltk_version": "3.10.0"
   },
   "cells": {
     "ifeval_p1_s1234": {
@@ -48,9 +49,9 @@
     },
     "ifeval_p4_s2345": {
       "total": 150,
-      "correct": 122,
-      "accuracy": 0.8133333333333334,
-      "accuracy_pct": 81.33333333333333,
+      "correct": 121,
+      "accuracy": 0.8066666666666666,
+      "accuracy_pct": 80.66666666666666,
       "correct_full_response": 98,
       "accuracy_full_response_pct": 65.33333333333333,
       "evaluated_text_primary": "span_after_verdict"

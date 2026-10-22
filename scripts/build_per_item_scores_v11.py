@@ -1,4 +1,4 @@
-"""Consolidation script to build telemetry/per_item_scores_v11.csv.
+"""Consolidation script to build data/audits/per_item_scores_v11.csv.
 
 Integrates:
 1. Baseline telemetry across all 4 datasets (PopQA, IFEval, LiveBench, FinQA)
@@ -12,7 +12,7 @@ Integrates:
 5. Strict abstention and v11 freeze composite/surface score recomputation per Doc 03.
 
 Output:
-- telemetry/per_item_scores_v11.csv (3,600 rows total, 33 columns)
+- data/audits/per_item_scores_v11.csv (3,600 rows total, 33 columns, tracked in git)
 """
 
 import csv
@@ -66,7 +66,7 @@ def build_v11_table(
     base_dir: str = "data",
     recomputed_uf_dir: str = "data/audits/audit_recomputed_uf_v11",
     audits_dir: str = "data/audits",
-    output_csv: str = "telemetry/per_item_scores_v11.csv",
+    output_csv: str = "data/audits/per_item_scores_v11.csv",
 ) -> List[Dict[str, Any]]:
     """Build unified per-item scores table v11."""
     base_path = Path(base_dir)
@@ -279,10 +279,20 @@ def build_v11_table(
     ]
 
     with open(out_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         for r in all_rows:
             writer.writerow(r)
+
+    # Also mirror to telemetry/per_item_scores_v11.csv for backwards compatibility with local scripts
+    legacy_path = Path("telemetry/per_item_scores_v11.csv")
+    if out_path.resolve() != legacy_path.resolve():
+        legacy_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(legacy_path, "w", newline="", encoding="utf-8") as lf:
+            writer = csv.DictWriter(lf, fieldnames=fieldnames, lineterminator="\n")
+            writer.writeheader()
+            for r in all_rows:
+                writer.writerow(r)
 
     logger.info("Successfully generated %s with %d records.", out_path, len(all_rows))
     return all_rows

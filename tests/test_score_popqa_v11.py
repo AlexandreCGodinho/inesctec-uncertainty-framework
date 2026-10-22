@@ -82,6 +82,30 @@ def test_popqa_needs_revision_abstention_case_a():
     assert result["span_category"] == "needs_revision"
 
 
+def test_popqa_no_verdict_routes_through_extract_answer_span():
+    """Verify Rev 1.3: no_verdict records route through extract_answer_span (byte-identical passthrough)."""
+    from src.scoring.answer_span import extract_answer_span
+
+    scorer = PopqaScorer()
+    raw_text = (
+        "The song was composed by Jimmy Van Heusen.\n\n"
+        "Note: Please verify discography details for specific recordings."
+    )
+    record = {"pattern": 1, "final_answer": raw_text}
+    reference = {
+        "answer": "Jimmy Van Heusen",
+        "possible_answers": "['Jimmy Van Heusen', 'Edward Chester Babcock']",
+    }
+    result = scorer.score(record, reference)
+    expected_span, expected_cat = extract_answer_span(raw_text)
+    assert expected_cat == "no_verdict"
+    assert result["span_category"] == "no_verdict"
+    assert result["extracted_answer"] == expected_span
+    assert result["extracted_answer"] == raw_text
+    assert result["match"] == 1.0
+    assert result["match_extracted"] == 1.0
+
+
 def test_popqa_local_mapping_integrity():
     """Verify local 150-prompt hermetic mapping integrity."""
     from scripts.score_popqa_v11 import POPQA_MAPPING_FILE, load_popqa_references
@@ -129,11 +153,14 @@ def test_popqa_record_enrichment_parity():
 
     scorer = PopqaScorer()
     res = scorer.score(baseline_record, ref)
-    extracted = _extract_answer(baseline_record["final_answer"])
+    extracted = res["extracted_answer"]
 
     # Simulate enrichment logic
     enriched_record = dict(baseline_record)
     enriched_record["match"] = res["match"]
+    enriched_record["popqa_word_boundary"] = res["match_word_boundary"]
+    enriched_record["popqa_naive_substring"] = res["match_naive_substring"]
+    enriched_record["popqa_extracted_match"] = res["match_extracted"]
     enriched_record["popqa_extracted_answer"] = extracted
     enriched_record["popqa_gold_answer"] = ref["answer"]
     enriched_record["popqa_aliases"] = ['Adolphe Adam', 'Adolphe-Charles Adam']
@@ -150,6 +177,8 @@ def test_popqa_record_enrichment_parity():
 
     # 2. Verify audit fields are correctly injected
     assert enriched_record["match"] == 1.0
+    assert enriched_record["popqa_extracted_match"] == 1.0
+    assert "popqa_exact_match" not in enriched_record
     assert enriched_record["popqa_extracted_answer"] == "The composer was Adolphe Adam."
     assert enriched_record["popqa_gold_answer"] == "Adolphe Adam"
     assert enriched_record["popqa_scored_v11"] is True

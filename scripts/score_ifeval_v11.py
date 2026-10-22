@@ -9,7 +9,6 @@ import csv
 import json
 import logging
 import sys
-import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List
 import numpy as np
@@ -24,6 +23,8 @@ from src.scoring.answer_span import extract_answer_span
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
+IFEVAL_MAPPING_FILE = PROJECT_ROOT / "data" / "ifeval_mapping_150_prompts.jsonl"
+
 RUNS = [
     # Seed 1234 (all 4 patterns)
     {"seed_dir": "report_run_a100", "seed": 1234, "pattern": 1},
@@ -37,27 +38,19 @@ RUNS = [
 ]
 
 
-def load_ifeval_references() -> Dict[str, Any]:
-    mapping_file = PROJECT_ROOT / "data/ifeval_mapping_150_prompts.jsonl"
-    logger.info("Loading IFEval sampled references from %s...", mapping_file)
+def load_ifeval_references(mapping_path: Path = IFEVAL_MAPPING_FILE) -> Dict[str, Any]:
+    if not mapping_path.exists():
+        raise FileNotFoundError(
+            f"Canonical IFEval reference mapping not found at {mapping_path}. "
+            "Refusing to fall back to unpinned network data."
+        )
+    logger.info("Loading IFEval sampled references from %s...", mapping_path)
     ifeval_refs = {}
-    if mapping_file.exists():
-        with open(mapping_file, "r", encoding="utf-8") as f:
-            for line in f:
-                if line.strip():
-                    item = json.loads(line)
-                    ifeval_refs[str(item["query_id"])] = item
-    else:
-        logger.warning("Mapping file not found at %s. Falling back to Google Research raw input_data.jsonl...", mapping_file)
-        url = "https://raw.githubusercontent.com/google-research/google-research/master/instruction_following_eval/data/input_data.jsonl"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req) as resp:
-            idx = 0
-            for line in resp:
-                if line.strip():
-                    item = json.loads(line.decode("utf-8"))
-                    ifeval_refs[str(idx)] = item
-                    idx += 1
+    with open(mapping_path, "r", encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                item = json.loads(line)
+                ifeval_refs[str(item["query_id"])] = item
     logger.info("Loaded %d IFEval references into memory.", len(ifeval_refs))
     return ifeval_refs
 
@@ -196,6 +189,7 @@ def score_ifeval_all(
             "upstream_commit": "e6890f85757dd84e27ca6df2dd30651dafad28e0",
             "deterministic_seed": 0,
             "langdetect_version": "1.0.9",
+            "nltk_version": "3.10.0",
         },
         "cells": summary_by_cell,
     }

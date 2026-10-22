@@ -42,11 +42,8 @@ class PopqaScorer(Scorer):
                 "span_category": "needs_revision",
             }
 
-        # For approved deliberation (Pattern 4) or unmoderated passthrough (Patterns 1-3)
-        if category in ("approved", "empty_approved", "approved_fallback"):
-            extracted = span
-        else:
-            extracted = _extract_answer(raw_prediction)
+        # For approved deliberation (Pattern 4) or unmoderated passthrough (Patterns 1-3, no_verdict)
+        extracted = span
 
         raw_scores = _compute_scores(aliases, raw_prediction)
         extracted_scores = _compute_scores(aliases, extracted)

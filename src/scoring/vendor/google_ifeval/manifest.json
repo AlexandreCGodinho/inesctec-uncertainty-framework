@@ -4,9 +4,11 @@
   "upstream_commit": "e6890f85757dd84e27ca6df2dd30651dafad28e0",
   "upstream_commit_date": "2026-07-22T20:03:19Z",
   "vendored_date": "2026-10-21",
+  "hash_basis": "git blob (LF line endings; enforced via .gitattributes *.py text eol=lf)",
   "deterministic_settings": {
     "langdetect_seed": 0,
-    "langdetect_version": "1.0.9"
+    "langdetect_version": "1.0.9",
+    "nltk_version": "3.10.0"
   },
   "files": {
     "instructions.py": {

@@ -9,23 +9,9 @@ from src.scoring.base import Scorer
 
 logger = logging.getLogger(__name__)
 
-# Ensure Google Research's instruction_following_eval vendored harness is imported
-try:
-    from src.scoring.vendor.google_ifeval import evaluation_lib as EL
-    from src.scoring.vendor.google_ifeval import instructions_registry
-    _HAS_OFFICIAL_HARNESS = True
-except ImportError:
-    try:
-        from instruction_following_eval import evaluation_lib as EL
-        from instruction_following_eval import instructions_registry
-        _HAS_OFFICIAL_HARNESS = True
-    except ImportError:
-        _HAS_OFFICIAL_HARNESS = False
-        logger.warning("instruction_following_eval vendored harness not available, falling back to regex parser.")
-
-_ALIAS_MAP = {
-    "detectable_format:json": "detectable_format:json_format",
-}
+# Strictly import Google Research's vendored instruction_following_eval harness (with DetectorFactory.seed = 0)
+from src.scoring.vendor.google_ifeval import evaluation_lib as EL
+from src.scoring.vendor.google_ifeval import instructions_registry
 
 
 class IfevalScorer(Scorer):
@@ -59,7 +45,9 @@ class IfevalScorer(Scorer):
 
         if should_use_span:
             extracted_text, span_cat = extract_answer_span(raw_final_answer)
-            eval_text = extracted_text if extracted_text and extracted_text.strip() else raw_final_answer
+            # Operational Abstention (Doc 08 Case A) & strict span evaluation:
+            # Never fall back to raw_final_answer when evaluating the post-verdict span.
+            eval_text = "" if span_cat == "needs_revision" else extracted_text
         else:
             eval_text = raw_final_answer
             extracted_text, span_cat = extract_answer_span(raw_final_answer)
@@ -68,8 +56,8 @@ class IfevalScorer(Scorer):
         instruction_id_list = reference.get("instruction_id_list")
         key = reference.get("key", 0)
 
-        # If official instruction list is available and harness is imported, use official evaluator
-        if instruction_id_list and _HAS_OFFICIAL_HARNESS:
+        # When official instruction list is supplied, evaluate strictly with the vendored Google harness
+        if instruction_id_list:
             kwargs = reference.get("kwargs", [])
             primary_res = _score_official_google(prompt, eval_text, instruction_id_list, kwargs, key=key)
 
@@ -107,11 +95,8 @@ def _score_official_google(
     key: int = 0,
 ) -> Dict[str, Any]:
     """Execute official Google Research strict and loose evaluation."""
-    # Normalize instruction IDs (e.g. alias mapping)
-    normalized_inst_ids = [_ALIAS_MAP.get(iid, iid) for iid in instruction_id_list]
-
     cleaned_kwargs = []
-    for i in range(len(normalized_inst_ids)):
+    for i in range(len(instruction_id_list)):
         if i < len(kwargs) and isinstance(kwargs[i], dict):
             cleaned_kwargs.append({k: v for k, v in kwargs[i].items() if v is not None})
         else:
@@ -119,7 +104,7 @@ def _score_official_google(
 
     inp = EL.InputExample(
         key=key,
-        instruction_id_list=normalized_inst_ids,
+        instruction_id_list=instruction_id_list,
         prompt=prompt,
         kwargs=cleaned_kwargs,
     )
@@ -151,6 +136,15 @@ def _score_official_google(
 
 
 def _score_ifeval_inner(prompt: str, response: str) -> dict[str, Any]:
+    if not response or not response.strip():
+        return {
+            "match": 0.0,
+            "strict_prompt": 0.0,
+            "loose_prompt": 0.0,
+            "strict_instruction": 0.0,
+            "loose_instruction": 0.0,
+            "at_least_one_instruction": 0.0,
+        }
     constraints = _extract_constraints(prompt)
     if not constraints:
         return {
@@ -167,7 +161,7 @@ def _score_ifeval_inner(prompt: str, response: str) -> dict[str, Any]:
 
     n = len(constraints)
     strict_prompt = 1.0 if strict_results and all(strict_results) else 0.0
-    loose_prompt = 1.0 if loose_results and any(loose_results) else 0.0
+    loose_prompt = 1.0 if loose_results and all(loose_results) else 0.0
     return {
         "match": strict_prompt,
         "strict_prompt": strict_prompt,
