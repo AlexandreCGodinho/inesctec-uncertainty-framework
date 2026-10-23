@@ -1,0 +1,69 @@
+{
+  "dataset": "ifeval",
+  "total_records": 900,
+  "total_files": 6,
+  "schema_pattern": "enriched_baseline_record",
+  "harness_provenance": {
+    "vendor_package": "src.scoring.vendor.google_ifeval",
+    "upstream_commit": "e6890f85757dd84e27ca6df2dd30651dafad28e0",
+    "deterministic_seed": 0,
+    "langdetect_version": "1.0.9",
+    "nltk_version": "3.10.0"
+  },
+  "cells": {
+    "ifeval_p1_s1234": {
+      "total": 150,
+      "correct": 133,
+      "accuracy": 0.8866666666666667,
+      "accuracy_pct": 88.66666666666667,
+      "correct_full_response": 133,
+      "accuracy_full_response_pct": 88.66666666666667,
+      "evaluated_text_primary": "final_answer"
+    },
+    "ifeval_p2_s1234": {
+      "total": 150,
+      "correct": 130,
+      "accuracy": 0.8666666666666667,
+      "accuracy_pct": 86.66666666666667,
+      "correct_full_response": 130,
+      "accuracy_full_response_pct": 86.66666666666667,
+      "evaluated_text_primary": "final_answer"
+    },
+    "ifeval_p3_s1234": {
+      "total": 150,
+      "correct": 135,
+      "accuracy": 0.9,
+      "accuracy_pct": 90.0,
+      "correct_full_response": 135,
+      "accuracy_full_response_pct": 90.0,
+      "evaluated_text_primary": "final_answer"
+    },
+    "ifeval_p4_s1234": {
+      "total": 150,
+      "correct": 119,
+      "accuracy": 0.7933333333333333,
+      "accuracy_pct": 79.33333333333333,
+      "correct_full_response": 94,
+      "accuracy_full_response_pct": 62.66666666666667,
+      "evaluated_text_primary": "span_after_verdict"
+    },
+    "ifeval_p4_s2345": {
+      "total": 150,
+      "correct": 121,
+      "accuracy": 0.8066666666666666,
+      "accuracy_pct": 80.66666666666666,
+      "correct_full_response": 98,
+      "accuracy_full_response_pct": 65.33333333333333,
+      "evaluated_text_primary": "span_after_verdict"
+    },
+    "ifeval_p4_s3456": {
+      "total": 150,
+      "correct": 117,
+      "accuracy": 0.78,
+      "accuracy_pct": 78.0,
+      "correct_full_response": 94,
+      "accuracy_full_response_pct": 62.66666666666667,
+      "evaluated_text_primary": "span_after_verdict"
+    }
+  }
+}

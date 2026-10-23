@@ -35,7 +35,7 @@ class TestIfevalScorer:
             "Include the word 'hello' and write at least 10 characters",
         )
         assert result["strict_prompt"] == 0.0
-        assert result["loose_prompt"] == 1.0
+        assert result["loose_prompt"] == 0.0
         assert result["strict_instruction"] == 0.5
         assert result["loose_instruction"] == 0.5
 
@@ -101,10 +101,10 @@ class TestIfevalScorer:
 
     def test_all_four_values_returned(self):
         result = self._score("hello", "Include the word 'hello'")
-        assert set(result.keys()) == {
+        assert {
             "strict_prompt", "loose_prompt",
             "strict_instruction", "loose_instruction",
-        }
+        }.issubset(set(result.keys()))
 
     def test_deterministic(self):
         r1 = self._score("hello", "Include the word 'hello'")

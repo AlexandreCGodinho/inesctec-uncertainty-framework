@@ -1,0 +1,49 @@
+{
+  "dataset": "popqa",
+  "total_records": 900,
+  "total_files": 6,
+  "schema_pattern": "enriched_baseline_record",
+  "provenance": {
+    "source": "akariasai/PopQA",
+    "hf_revision": "098765c79ea10a2cb19c828324e33281b8336ec0",
+    "local_mapping": "data/popqa_mapping_150_prompts.jsonl"
+  },
+  "cells": {
+    "popqa_p1_s1234": {
+      "total": 150,
+      "correct": 30,
+      "accuracy": 0.2,
+      "accuracy_pct": 20.0
+    },
+    "popqa_p2_s1234": {
+      "total": 150,
+      "correct": 37,
+      "accuracy": 0.24666666666666667,
+      "accuracy_pct": 24.666666666666668
+    },
+    "popqa_p3_s1234": {
+      "total": 150,
+      "correct": 35,
+      "accuracy": 0.23333333333333334,
+      "accuracy_pct": 23.333333333333332
+    },
+    "popqa_p4_s1234": {
+      "total": 150,
+      "correct": 34,
+      "accuracy": 0.22666666666666666,
+      "accuracy_pct": 22.666666666666664
+    },
+    "popqa_p4_s2345": {
+      "total": 150,
+      "correct": 32,
+      "accuracy": 0.21333333333333335,
+      "accuracy_pct": 21.333333333333336
+    },
+    "popqa_p4_s3456": {
+      "total": 150,
+      "correct": 33,
+      "accuracy": 0.22,
+      "accuracy_pct": 22.0
+    }
+  }
+}

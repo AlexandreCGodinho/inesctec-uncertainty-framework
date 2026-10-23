@@ -1,0 +1,44 @@
+{
+  "dataset": "livebench",
+  "total_records": 900,
+  "total_files": 6,
+  "schema_pattern": "enriched_baseline_record",
+  "cells": {
+    "livebench_p1_s1234": {
+      "total": 150,
+      "correct_equivalent": 104.0,
+      "accuracy": 0.6933333333333334,
+      "accuracy_pct": 69.33333333333334
+    },
+    "livebench_p2_s1234": {
+      "total": 150,
+      "correct_equivalent": 110.0,
+      "accuracy": 0.7333333333333333,
+      "accuracy_pct": 73.33333333333333
+    },
+    "livebench_p3_s1234": {
+      "total": 150,
+      "correct_equivalent": 120.875,
+      "accuracy": 0.8058333333333333,
+      "accuracy_pct": 80.58333333333333
+    },
+    "livebench_p4_s1234": {
+      "total": 150,
+      "correct_equivalent": 119.5,
+      "accuracy": 0.7966666666666666,
+      "accuracy_pct": 79.66666666666666
+    },
+    "livebench_p4_s2345": {
+      "total": 150,
+      "correct_equivalent": 119.375,
+      "accuracy": 0.7958333333333333,
+      "accuracy_pct": 79.58333333333333
+    },
+    "livebench_p4_s3456": {
+      "total": 150,
+      "correct_equivalent": 113.375,
+      "accuracy": 0.7558333333333334,
+      "accuracy_pct": 75.58333333333334
+    }
+  }
+}

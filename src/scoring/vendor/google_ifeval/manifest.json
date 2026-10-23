@@ -1,0 +1,31 @@
+{
+  "name": "google_ifeval_vendored_harness",
+  "upstream_repository": "https://github.com/google-research/google-research/tree/master/instruction_following_eval",
+  "upstream_commit": "e6890f85757dd84e27ca6df2dd30651dafad28e0",
+  "upstream_commit_date": "2026-07-22T20:03:19Z",
+  "vendored_date": "2026-10-21",
+  "hash_basis": "git blob (LF line endings; enforced via .gitattributes *.py text eol=lf)",
+  "deterministic_settings": {
+    "langdetect_seed": 0,
+    "langdetect_version": "1.0.9",
+    "nltk_version": "3.10.0"
+  },
+  "files": {
+    "instructions.py": {
+      "sha256": "60e086f5342a03ce8e18b64bbcccf86308f523c08aa826707a562150a52f3edf",
+      "size_bytes": 55162
+    },
+    "instructions_registry.py": {
+      "sha256": "ec92d72c264f6d906978613085db262356174300370a3fffe6fefd5969ce9cfc",
+      "size_bytes": 7240
+    },
+    "instructions_util.py": {
+      "sha256": "a73797261eee5bf447e279d82a2b700b1bdd3cb1193412dbab1270a85832bc6b",
+      "size_bytes": 19538
+    },
+    "evaluation_lib.py": {
+      "sha256": "35decc06000718487f44d7deafa6d3f48a8ec0886281edf40162c0265b7d248c",
+      "size_bytes": 6984
+    }
+  }
+}
