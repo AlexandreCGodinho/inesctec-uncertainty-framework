@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from scripts.analysis_statistics import (
+    _ALL_PATTERN_PAIRS,
     _mcnemar_pvalue,
     _paired_bootstrap_ci,
     _paired_wilcoxon_test,
@@ -13,6 +14,7 @@ from scripts.analysis_statistics import (
     run_bootstrap_analysis,
     run_livebench_wilcoxon_analysis,
     run_livebench_mcnemar_secondary,
+    run_holm_stepdown_seed1234,
     run_fdr,
     _collect_pvals,
 )
@@ -252,3 +254,61 @@ class TestLiveBenchWilcoxonAndSecondaryMcNemar:
         assert res["p2_vs_p1"]["b"] == 1
         assert res["p2_vs_p1"]["c"] == 0
         assert res["p2_vs_p1"]["n"] == 2
+
+
+class TestHolmStepdownSeed1234:
+    def test_monotonicity_and_rejection_synthetic(self):
+        mcnemar = {
+            "finqa": {
+                "p2_vs_p1": {"p_value": 0.40},
+                "p3_vs_p1": {"p_value": 0.20},
+                "p4_vs_p1": {"per_seed": [{"seed": 1234, "p_value": 0.001}], "p_value_median": 0.001},
+                "p3_vs_p2": {"p_value": 1.00},
+                "p4_vs_p2": {"per_seed": [{"seed": 1234, "p_value": 0.005}], "p_value_median": 0.005},
+                "p4_vs_p3": {"per_seed": [{"seed": 1234, "p_value": 0.008}], "p_value_median": 0.008},
+            },
+        }
+        holm = run_holm_stepdown_seed1234(mcnemar, {}, alpha=0.05)
+        fq = holm["finqa"]
+        assert fq["p4_vs_p1"]["p_holm"] == pytest.approx(0.006)
+        assert fq["p4_vs_p2"]["p_holm"] == pytest.approx(0.025)
+        assert fq["p4_vs_p3"]["p_holm"] == pytest.approx(0.032)
+        assert fq["p4_vs_p1"]["rejected"] is True
+        assert fq["p4_vs_p2"]["rejected"] is True
+        assert fq["p4_vs_p3"]["rejected"] is True
+        assert fq["p2_vs_p1"]["rejected"] is False
+
+    def test_reproduces_all_pairs_holm_seed1234_on_v11_csv(self):
+        from pathlib import Path
+
+        csv_path = Path(__file__).resolve().parent.parent / "data" / "audits" / "per_item_scores_v11.csv"
+        df = pd.read_csv(csv_path, dtype=str)
+        mcnemar = run_mcnemar_analysis(df, pairs=_ALL_PATTERN_PAIRS)
+        lb_wilcoxon = run_livebench_wilcoxon_analysis(df, pairs=_ALL_PATTERN_PAIRS)
+        holm = run_holm_stepdown_seed1234(mcnemar, lb_wilcoxon, alpha=0.05)
+
+        # FinQA: P4 > {P1, P2, P3} significant; P1/P2/P3 indistinguishable
+        assert holm["finqa"]["p4_vs_p1"]["rejected"] is True
+        assert holm["finqa"]["p4_vs_p2"]["rejected"] is True
+        assert holm["finqa"]["p4_vs_p3"]["rejected"] is True
+        assert holm["finqa"]["p2_vs_p1"]["rejected"] is False
+        assert holm["finqa"]["p3_vs_p1"]["rejected"] is False
+        assert holm["finqa"]["p3_vs_p2"]["rejected"] is False
+
+        # LiveBench: P3 > P1, P4 > P1, and P3 > P2 survive Holm step-down; P4 vs P2 (p_holm=0.059) does not
+        assert holm["livebench"]["p4_vs_p1"]["rejected"] is True
+        assert holm["livebench"]["p4_vs_p1"]["p_holm"] == pytest.approx(0.009754, abs=1e-4)
+        assert holm["livebench"]["p3_vs_p1"]["rejected"] is True
+        assert holm["livebench"]["p3_vs_p2"]["rejected"] is True
+        assert holm["livebench"]["p2_vs_p1"]["rejected"] is False
+        assert holm["livebench"]["p4_vs_p2"]["rejected"] is False
+        assert holm["livebench"]["p4_vs_p3"]["rejected"] is False
+
+        # PopQA: zero significant pairs
+        assert all(not v["rejected"] for v in holm["popqa"].values())
+
+        # IFEval: P4 < P1 and P4 < P3 survive Holm step-down
+        assert holm["ifeval"]["p4_vs_p1"]["rejected"] is True
+        assert holm["ifeval"]["p4_vs_p3"]["rejected"] is True
+        assert holm["ifeval"]["p4_vs_p2"]["rejected"] is False
+
