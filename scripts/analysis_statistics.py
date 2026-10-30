@@ -258,16 +258,18 @@ def run_mcnemar_analysis(
             if px == 4:
                 seed_results = []
                 for seed in sorted(px_df["seed"].unique()):
+                    seed_id = int(seed) if str(seed).isdigit() else str(seed)
                     sub = px_df[px_df["seed"] == seed].set_index("query_id")["headline_bin"]
                     common = queries_py.index.intersection(sub.index)
                     if len(common) < 2:
-                        seed_results.append({"b": 0, "c": 0, "p_value": 1.0, "n": 0})
+                        seed_results.append({"seed": seed_id, "b": 0, "c": 0, "p_value": 1.0, "n": 0})
                         continue
                     py_aligned = queries_py.loc[common].values
                     px_aligned = sub.loc[common].values
                     b = int(np.sum((py_aligned == 0) & (px_aligned == 1)))
                     c = int(np.sum((py_aligned == 1) & (px_aligned == 0)))
                     seed_results.append({
+                        "seed": seed_id,
                         "b": b,
                         "c": c,
                         "p_value": _mcnemar_pvalue(b, c),
@@ -388,11 +390,89 @@ def _collect_pvals(mcnemar: dict, bootstrap: dict) -> list[float]:
     return pvals
 
 
+def _extract_seed_entry(entry: dict, target_seed: int = 1234) -> dict:
+    if "per_seed" not in entry:
+        return entry
+    for item in entry["per_seed"]:
+        if str(item.get("seed")) == str(target_seed):
+            return item
+    return entry["per_seed"][0] if entry["per_seed"] else {}
+
+
+def run_holm_stepdown_seed1234(
+    mcnemar_results: dict,
+    lb_wilcoxon_results: dict,
+    alpha: float = 0.05,
+    pairs: list[tuple[int, int]] = _ALL_PATTERN_PAIRS,
+) -> dict:
+    """Compute six-pair step-down Holm adjusted p-values per benchmark at seed 1234."""
+    out: dict = {}
+
+    for dataset in _BINARY_DATASETS:
+        if dataset not in mcnemar_results:
+            continue
+        raw_pvals: list[float] = []
+        pair_entries: list[tuple[str, dict]] = []
+        for px, py in pairs:
+            pair_key = f"p{px}_vs_p{py}"
+            if pair_key not in mcnemar_results[dataset]:
+                continue
+            seed_rec = _extract_seed_entry(mcnemar_results[dataset][pair_key], target_seed=1234)
+            pv = float(seed_rec.get("p_value", 1.0))
+            raw_pvals.append(pv)
+            pair_entries.append((pair_key, seed_rec))
+
+        if not raw_pvals:
+            continue
+        rejected, adj_pvals, _, _ = multipletests(raw_pvals, alpha=alpha, method="holm")
+        out[dataset] = {}
+        for (pair_key, seed_rec), ph, rej in zip(pair_entries, adj_pvals, rejected):
+            out[dataset][pair_key] = {
+                "b": int(seed_rec.get("b", 0)),
+                "c": int(seed_rec.get("c", 0)),
+                "n": int(seed_rec.get("n", 0)),
+                "p_value": float(seed_rec.get("p_value", 1.0)),
+                "p_holm": float(ph),
+                "rejected": bool(rej),
+            }
+
+    if lb_wilcoxon_results:
+        raw_pvals = []
+        pair_entries = []
+        for px, py in pairs:
+            pair_key = f"p{px}_vs_p{py}"
+            if pair_key not in lb_wilcoxon_results:
+                continue
+            seed_rec = _extract_seed_entry(lb_wilcoxon_results[pair_key], target_seed=1234)
+            pv = float(seed_rec.get("p_value", 1.0))
+            raw_pvals.append(pv)
+            pair_entries.append((pair_key, seed_rec))
+
+        if raw_pvals:
+            rejected, adj_pvals, _, _ = multipletests(raw_pvals, alpha=alpha, method="holm")
+            out["livebench"] = {}
+            for (pair_key, seed_rec), ph, rej in zip(pair_entries, adj_pvals, rejected):
+                md = seed_rec.get("observed_mean_diff")
+                out["livebench"][pair_key] = {
+                    "statistic": seed_rec.get("statistic"),
+                    "observed_mean_diff": float(md) if md is not None else None,
+                    "observed_mean_diff_pp": float(md * 100.0) if md is not None else None,
+                    "n_nonzero": int(seed_rec.get("n_nonzero", 0)),
+                    "n": int(seed_rec.get("n", 0)),
+                    "p_value": float(seed_rec.get("p_value", 1.0)),
+                    "p_holm": float(ph),
+                    "rejected": bool(rej),
+                }
+
+    return out
+
+
 def run_p4_variance_analysis(df: pd.DataFrame) -> dict:
     results: dict = {}
     for dataset in _BINARY_DATASETS:
-        ds_df = df[(df["dataset"] == dataset) & (df["pattern"] == "4")].copy()
+        ds_df = df[(df["dataset"] == dataset) & (df["pattern"].astype(str) == "4")].copy()
         ds_df = ds_df.dropna(subset=["headline_bin"])
+        ds_df["headline_bin"] = ds_df["headline_bin"].astype(str).str.replace(".0", "", regex=False)
         ds_df = ds_df[(ds_df["headline_bin"] == "0") | (ds_df["headline_bin"] == "1")]
         ds_df["headline_bin"] = ds_df["headline_bin"].astype(int)
         if ds_df.empty:
@@ -452,6 +532,12 @@ def main() -> None:
     fdr_results = run_fdr(all_pvals, alpha=args.alpha)
 
     p4_variance = run_p4_variance_analysis(df)
+    holm_seed1234 = run_holm_stepdown_seed1234(
+        mcnemar_results,
+        lb_wilcoxon_results,
+        alpha=args.alpha,
+        pairs=_ALL_PATTERN_PAIRS,
+    )
 
     results = {
         "mcnemar": mcnemar_results,
@@ -459,6 +545,7 @@ def main() -> None:
         "livebench_mcnemar_secondary_acc1": lb_mcnemar_sec,
         "paired_bootstrap": bootstrap_results,
         "fdr": fdr_results,
+        "holm_stepdown_seed1234": holm_seed1234,
         "p4_between_seed_variance": p4_variance,
     }
 
@@ -536,6 +623,25 @@ def main() -> None:
     if fdr_results["n_tests"] > 0:
         for i, (p, r) in enumerate(zip(fdr_results["corrected"], fdr_results["rejected"])):
             print(f"  Test {i+1}: corrected p = {p:.4f} {'✓' if r else '✗'}")
+
+    print(f"\n=== All-Pairs Step-Down Holm at Seed 1234{dev_label} ===")
+    print(f"{'Dataset':<12} {'Pair':<12} {'Effect / (b,c)':<18} {'p-value':<12} {'p_Holm':<12} {'Sig':<5}")
+    print("-" * 74)
+    for dataset in ("finqa", "livebench", "popqa", "ifeval"):
+        if dataset not in holm_seed1234:
+            continue
+        for px, py in _ALL_PATTERN_PAIRS:
+            pair_key = f"p{px}_vs_p{py}"
+            if pair_key not in holm_seed1234[dataset]:
+                continue
+            v = holm_seed1234[dataset][pair_key]
+            lbl = f"P{py} vs P{px}"
+            if dataset == "livebench":
+                eff = f"{v['observed_mean_diff_pp']:+.2f} ({v['n_nonzero']})"
+            else:
+                eff = f"({v['b']}, {v['c']})"
+            sig = "Yes" if v["rejected"] else "No"
+            print(f"{dataset:<12} {lbl:<12} {eff:<18} {v['p_value']:<12.5f} {v['p_holm']:<12.5f} {sig:<5}")
 
     print(f"\n=== P4 Between-Seed Variance{dev_label} ===")
     print(f"{'Dataset':<12} {'Mean Acc':<12} {'SD':<12} {'Per-Seed':<24}")

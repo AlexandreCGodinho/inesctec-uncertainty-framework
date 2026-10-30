@@ -1,10 +1,16 @@
 pydantic>=2.7
+# Note: vllm is required only for GPU inference runs on Linux/CUDA (A100);
+# CPU-only scoring, statistical/sensor analyses, and the pytest suite run without it.
 vllm>=0.6
 litellm>=1.40
 sentence-transformers>=3.0
 datasets>=2.19
 pandas
 numpy
+scipy
+scikit-learn
+matplotlib
+openpyxl
 sympy
 pyyaml
 tqdm

@@ -1,0 +1,110 @@
+Uncertainty-Aware Validation Framework for Agentic Reasoning Patterns
+Copyright 2026 INESC TEC and the authors:
+  Alexandre Cabral Godinho, Fedi Hassine, and Álvaro Figueira
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this repository except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+================================================================================
+THIRD-PARTY SOFTWARE AND BENCHMARK DATA NOTICES
+================================================================================
+
+1. Google Research IFEval Evaluation Harness and Sampled Prompts
+   Paths:
+     - src/scoring/vendor/google_ifeval/
+     - data/ifeval_mapping_150_prompts.jsonl, data/ifeval_mapping_150_prompts.csv
+     - data/audits/ifeval_v11_scores/
+   Upstream:
+     - https://github.com/google-research/google-research/tree/master/instruction_following_eval
+       (commit e6890f85757dd84e27ca6df2dd30651dafad28e0)
+     - https://huggingface.co/datasets/google/IFEval
+   Copyright 2026 The Google Research Authors.
+   Licensed under the Apache License, Version 2.0.
+
+--------------------------------------------------------------------------------
+
+2. FinQA Reference Cache and Sampled Gold Answers
+   Paths:
+     - data/finqa_references_cache.json
+     - data/audits/finqa_v11_scores/
+   Upstream:
+     - https://github.com/czyssrs/FinQA
+       (commit 0f16e2867befa6840783e58be38c9efb9229d742)
+
+   MIT License
+
+   Copyright (c) 2021 Zhiyu Chen
+
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+
+--------------------------------------------------------------------------------
+
+3. PopQA Sampled Prompts and Entity Aliases
+   Paths:
+     - data/popqa_mapping_150_prompts.jsonl, data/popqa_mapping_150_prompts.csv
+     - data/audits/popqa_v11_scores/
+   Upstream:
+     - https://github.com/AlexTMallen/adaptive-retrieval
+     - https://huggingface.co/datasets/akariasai/PopQA (derived from Wikidata CC0)
+
+   MIT License
+
+   Copyright (c) 2023 Alex Mallen
+
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+
+--------------------------------------------------------------------------------
+
+4. LiveBench Reasoning Gold Answers
+   Paths:
+     - data/audits/livebench_v11_scores/
+   Upstream:
+     - https://github.com/LiveBench/LiveBench
+       (commit 4bf3d6f4cb37fa8dc3967dd1b124fef5d4099635)
+     - https://huggingface.co/datasets/livebench/reasoning
+       (commit 6fc6498a5dfba553f69f4413feabade1f1a2d384)
+   Distributed under the Apache License, Version 2.0.
+
+--------------------------------------------------------------------------------
+
+5. Model Completions in Baseline Telemetry
+   Paths:
+     - data/report_run_a100/
+     - data/report_run_a100_seed2345/
+     - data/report_run_a100_seed3456/
+   Generated with google/gemma-4-12b-it (released under the Apache License, Version 2.0).
